@@ -32,7 +32,7 @@ export default ({ children }) => (
           font-style: normal;
         `}
         >
-          Game
+          The Imagination
         </h3>
       </Link>
 
