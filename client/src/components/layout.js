@@ -1,42 +1,63 @@
 import React from 'react';
 import { css } from '@emotion/core';
-import {
-  BrowserRouter as Router,
-  Link
-} from 'react-router-dom';
-import { rhythm } from '../utils/typography';
+import { Link } from 'react-router-dom';
+
+const Footer = () => (
+  <div>Footer</div>
+);
 
 export default ({ children }) => (
-  <Router>
-    <div
-      css={css`
+  <div
+    css={css`
         margin: 0 auto;
         max-width: 700px;
-        padding: ${rhythm(2)};
+        padding: 30px;
         @media (max-width: 550px) {
-          padding: ${rhythm(1)};
+          padding: 10px;
         }
-        padding-top: ${rhythm(1.5)};
-
+        padding-top: 25px;
         color: var(--textNormal);
         transition-duration: 0.2s;
         transition-property: background-color, color;
     `}
-    >
-
-      <Link to="/">
-        <h3
-          css={css`
-          margin-bottom: ${rhythm(2)};
+  >
+    <Link to="/">
+      <h3
+        css={css`
+          margin-bottom: 20px;
+          margin-right: 20px;
           display: inline-block;
           font-style: normal;
         `}
-        >
-          The Imagination
-        </h3>
-      </Link>
-
-      {children}
-    </div>
-  </Router>
+      >
+        Home screen
+      </h3>
+    </Link>
+    <Link to="/auth">
+      <h3
+        css={css`
+          margin-bottom: 20px;
+          margin-right: 20px;
+          display: inline-block;
+          font-style: normal;
+        `}
+      >
+        Auth screen
+      </h3>
+    </Link>
+    <Link to="/other">
+      <h3
+        css={css`
+          margin-bottom: 20px;
+          margin-right: 20px;
+          display: inline-block;
+          font-style: normal;
+        `}
+      >
+        Other screen
+      </h3>
+    </Link>
+    {children}
+    <Footer />
+  </div>
 );

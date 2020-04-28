@@ -1,22 +1,28 @@
 import React from 'react';
-import Layout from './components/layout';
-import TableView from './components/table-view';
-import Game from './utils/game';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import PrivateRoute from './components/private-route';
+import HomeScreen from './screens/HomeScreen';
+import Auth from './screens/Auth';
+import Other from './screens/Other';
+import NotFound from './screens/404';
 
-function App() {
-  const thisgame = new Game();
-  const gameData = thisgame.createGame();
-  console.log('gameData', gameData);
-
-  const createNewPlayer = (id, name) => {
-    thisgame.createPlayer(id, name);
-  };
-
-  return (
-    <Layout>
-      <TableView gameData={gameData} createNewPlayer={createNewPlayer} />
-    </Layout>
-  );
-}
+const App = () => (
+  <Router>
+    <Switch>
+      <Route path="/auth">
+        <Auth />
+      </Route>
+      <PrivateRoute path="/">
+        <HomeScreen />
+      </PrivateRoute>
+      <PrivateRoute path="/other">
+        <Other />
+      </PrivateRoute>
+      <Route path="*">
+        <NotFound />
+      </Route>
+    </Switch>
+  </Router>
+);
 
 export default App;

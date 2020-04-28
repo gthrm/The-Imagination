@@ -30,6 +30,10 @@ body.dark {
   --hr: hsla(0, 0%, 100%, 0.2);
 }
 
+#root {
+  min-height: 100vh;
+}
+
 a:active,
 a:hover {
   outline-width: 0;

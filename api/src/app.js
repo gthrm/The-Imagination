@@ -47,6 +47,10 @@ const server = http.createServer(app);
 
 const socketio = io(server);
 
+app.post('/auth', (req, res) => {
+  db.getUserByUserName(req.body.login).then((data) => res.send(data)).catch((err) => res.send(err));
+});
+
 app.get('/users', (req, res) => {
   db.listUsers(req.query.page).then((data) => res.send(data)).catch((err) => res.send(err));
 });

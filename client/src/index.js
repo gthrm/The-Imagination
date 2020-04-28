@@ -1,22 +1,18 @@
-/* eslint-disable no-undef */
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { TypographyStyle, GoogleFont } from 'react-typography';
-import './utils/reset.css';
-import typography from './utils/typography';
+import { Provider } from 'react-redux';
+import createStore from './redux';
 import App from './App';
-import * as serviceWorker from './serviceWorker';
+
+import 'moment/locale/ru.js';
+import './assets/css/reset.css';
+import './assets/css/global.css';
+
 
 ReactDOM.render(
-  <React.StrictMode>
-    <TypographyStyle typography={typography} />
-    <GoogleFont typography={typography} />
+  <Provider store={createStore()}>
     <App />
-  </React.StrictMode>,
+  </Provider>,
+  // eslint-disable-next-line no-undef
   document.getElementById('root')
 );
-
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
