@@ -21,42 +21,50 @@ export default ({ children }) => (
         transition-property: background-color, color;
     `}
   >
-    <Link to="/">
-      <h3
-        css={css`
+    <div
+      css={css`
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      `}
+    >
+      <Link to="/">
+        <h3
+          css={css`
           margin-bottom: 20px;
           margin-right: 20px;
           display: inline-block;
           font-style: normal;
         `}
-      >
-        Home screen
+        >
+          Home screen
       </h3>
-    </Link>
-    <Link to="/auth">
-      <h3
-        css={css`
+      </Link>
+      <Link to="/auth">
+        <h3
+          css={css`
           margin-bottom: 20px;
           margin-right: 20px;
           display: inline-block;
           font-style: normal;
         `}
-      >
-        Auth screen
+        >
+          Auth screen
       </h3>
-    </Link>
-    <Link to="/other">
-      <h3
-        css={css`
+      </Link>
+      <Link to="/other">
+        <h3
+          css={css`
           margin-bottom: 20px;
           margin-right: 20px;
           display: inline-block;
           font-style: normal;
         `}
-      >
-        Other screen
+        >
+          Other screen
       </h3>
-    </Link>
+      </Link>
+    </div>
     {children}
     <Footer />
   </div>

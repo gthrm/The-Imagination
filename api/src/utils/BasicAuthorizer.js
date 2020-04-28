@@ -14,14 +14,20 @@ export default async function myAsyncAuthorizer(username, password, cb) {
       ...item,
       valid: await bcrypt.compare(password, item.password),
     }));
-    Promise.all(usersList)
+    return Promise.all(usersList)
         .then(
             (completed) => {
               const itemOkList = completed.find((item) => item.valid === true && item._doc.name === username);
-              if (itemOkList) {
-                return cb(null, true);
+              if (cb) {
+                if (itemOkList) {
+                  return cb(null, true);
+                }
+                return cb(null, false);
               }
-              return cb(null, false);
+              if (itemOkList) {
+                return true;
+              }
+              return false;
             });
   } catch (error) {
     (err) => console.error(err);

@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import basicAuth from 'express-basic-auth';
 import helmet from 'helmet';
 import io from 'socket.io';
 import 'log-timestamp';
@@ -14,14 +13,15 @@ import http from 'http';
 
 // Разкомментировать в продакшене для подключения SSL сертификата
 // import fs from 'fs';
-
-import myAsyncAuthorizer from './utils/AsyncAuthorizer';
+import {HandlerGenerator} from './utils/otherUtils';
+import {checkToken} from './utils/JWTAuthorizer';
 import * as db from './utils/DataBaseUtils';
 import {serverPort} from '../etc/config.json';
 import Game from './utils/game';
 
 const port = process.env.PORT || serverPort;
 const game = new Game();
+const handlers = new HandlerGenerator();
 // Разкомментировать в продакшене для подключения SSL сертификата
 // const options = {
 //     key: fs.readFileSync(path.join(__dirname, '../../../etc/letsencrypt/live/site.ru', 'privkey.pem')),
@@ -35,27 +35,19 @@ db.setUpConnection();
 app.use(bodyParser.json());
 app.use(cors({origin: '*'}));
 app.use(helmet());
-app.use(
-    basicAuth({
-      authorizer: myAsyncAuthorizer,
-      authorizeAsync: true,
-    }),
-);
 
 // const server = https.createServer(options, app);
 const server = http.createServer(app);
 
 const socketio = io(server);
 
-app.post('/auth', (req, res) => {
-  db.getUserByUserName(req.body.login).then((data) => res.send(data)).catch((err) => res.send(err));
-});
+app.post('/auth', handlers.login);
 
 app.get('/users', (req, res) => {
   db.listUsers(req.query.page).then((data) => res.send(data)).catch((err) => res.send(err));
 });
 
-app.post('/user', (req, res) => {
+app.post('/user', checkToken, (req, res) => {
   db.createUser(req.body)
       .then((data) => {
         console.log('post user ', data);
@@ -67,47 +59,47 @@ app.post('/user', (req, res) => {
       .catch((err) => res.send(err));
 });
 
-app.get('/game/:gameId', (req, res) => {
+app.get('/game/:gameId', checkToken, (req, res) => {
   const findGame = game.findGame(req.params.gameId);
   res.send(findGame);
 });
 
-app.post('/game', (req, res) => {
+app.post('/game', checkToken, (req, res) => {
   // const game = createGame();
   res.send(game.createGame());
 });
 
-app.put('/game/:gameId', (req, res) => {
+app.put('/game/:gameId', checkToken, (req, res) => {
   const startgame = game.startGame(req.params.gameId, socketio);
   res.send(startgame);
 });
 
-app.post('/test/:gameId', (req, res) => {
+app.post('/test/:gameId', checkToken, checkToken, (req, res) => {
   const startgame = game.test(req.params.gameId, socketio);
   res.send(startgame);
 });
 
-app.post('/player/:playerName/:gameId', (req, res) => {
+app.post('/player/:playerName/:gameId', checkToken, (req, res) => {
   const message = game.playerJoins(req.params.playerName, req.params.gameId, socketio);
   res.send(message);
 });
 
-app.get('/items', (req, res) =>
+app.get('/items', checkToken, (req, res) =>
   db.listItems(req.query.page, req.query.expiried)
       .then((data) => res.send(data))
       .catch((err) => res.send(err)));
 
-app.get('/items/:id', (req, res) =>
+app.get('/items/:id', checkToken, (req, res) =>
   db.getItems(req.params.id)
       .then((data) => res.send(data))
       .catch((err) => res.send(err)));
 
-app.post('/items', (req, res) =>
+app.post('/items', checkToken, (req, res) =>
   db.createItems(req.body)
       .then((data) => res.send(data))
       .catch((err) => res.send(err)));
 
-app.patch('/items/:id', (req, res) =>
+app.patch('/items/:id', checkToken, (req, res) =>
   db.updateItems(req.params.id, req.body)
       .then((data) => res.send(data))
       .catch((err) => res.send(err)));

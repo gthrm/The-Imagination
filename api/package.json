@@ -6,7 +6,7 @@
   "scripts": {
     "start": "yarn build && node ./build/app.js",
     "build": "./node_modules/.bin/babel src --out-dir build",
-    "lint": "eslint *.js **/*.js"
+    "lint": "eslint '**/*.{js,jsx}' --quiet"
   },
   "author": "",
   "license": "ISC",

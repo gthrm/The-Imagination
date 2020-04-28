@@ -2,30 +2,39 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import React from 'react';
 import {
-  useHistory,
+  Redirect,
   useLocation
 } from 'react-router-dom';
 import {
   Formik, Field, Form, ErrorMessage
 } from 'formik';
 import * as Yup from 'yup';
-// import { css } from '@emotion/core';
+import { useSelector } from 'react-redux';
 import Layout from '../components/layout';
 import useActions from '../hooks/useActions';
-import { signIn } from '../redux/ducks/auth';
+import { logIn, authSelector } from '../redux/ducks/auth';
 
 export default function Auth() {
-  const history = useHistory();
   const location = useLocation();
 
-  const { from } = location.state || { from: { pathname: '/' } };
-  const [signInApi] = useActions([signIn]);
+  const [logInApi] = useActions([logIn]);
 
   const login = (credentials) => {
-    signInApi({ credentials });
-    history.replace(from);
+    logInApi({
+      credentials
+    });
   };
-
+  const authToken = !!useSelector(authSelector);
+  if (authToken) {
+    return (
+      <Redirect
+        to={{
+          pathname: '/',
+          state: { from: location }
+        }}
+      />
+    );
+  }
   return (
     <Layout>
       <Formik
@@ -47,7 +56,7 @@ export default function Auth() {
       >
         {({ errors, status, touched }) => (
           <Form>
-            <div className="form-row">
+            <div>
               <div className="form-group col-5">
                 <label htmlFor="login">Login</label>
                 <Field name="login" type="text" />

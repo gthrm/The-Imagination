@@ -7,13 +7,13 @@ import { useSelector } from 'react-redux';
 import { authSelector } from '../redux/ducks/auth';
 
 export default function PrivateRoute({ children, ...rest }) {
-  const isAuthenticated = useSelector(authSelector);
-  console.log('isAuthenticated', isAuthenticated);
+  const authData = useSelector(authSelector);
+  // console.log('isAuthenticated', authData);
 
   return (
     <Route
       {...rest}
-      render={({ location }) => (isAuthenticated ? (
+      render={({ location }) => (authData && authData.success ? (
         children
       ) : (
         <Redirect

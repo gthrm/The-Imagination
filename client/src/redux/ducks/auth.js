@@ -9,8 +9,12 @@ import { Record } from 'immutable';
 import { name } from '../../../package.json';
 import apiService from '../../utils/API';
 import {
-  removeTokenFromLocalStorage
+  removeTokenFromLocalStorage, setTokenToLocalStorage
 } from '../../utils/tokenManagement';
+import {
+  setItemToLocalStorage,
+  getItemFromLocalStorage
+} from '../../utils/localStorangeManagement';
 import { errorSaga } from './error';
 
 
@@ -24,6 +28,11 @@ export const SIGN_IN_REQUEST = `${prefix}/SIGN_IN_REQUEST`;
 export const SIGN_IN_START = `${prefix}/SIGN_IN_START`;
 export const SIGN_IN_SUCCESS = `${prefix}/SIGN_IN_SUCCESS`;
 export const SIGN_IN_ERROR = `${prefix}/SIGN_IN_ERROR`;
+
+export const LOG_IN_REQUEST = `${prefix}/LOG_IN_REQUEST`;
+export const LOG_IN_START = `${prefix}/LOG_IN_START`;
+export const LOG_IN_SUCCESS = `${prefix}/LOG_IN_SUCCESS`;
+export const LOG_IN_ERROR = `${prefix}/LOG_IN_ERROR`;
 
 export const LOG_OUT_REQUEST = `${prefix}/LOG_OUT_REQUEST`;
 export const LOG_OUT_START = `${prefix}/LOG_OUT_START`;
@@ -40,7 +49,7 @@ export const ENTER_ERROR = `${prefix}/ENTER_ERROR`;
  * */
 export const ReducerRecord = Record({
   auth: null,
-  loading: false,
+  loading: true,
   enterMessage: null,
   error: null,
   enter: false,
@@ -61,17 +70,20 @@ export default function reducer(state = new ReducerRecord(), action) {
         .set('error', null);
 
     case SIGN_IN_START:
+    case LOG_IN_START:
       return state
         .set('error', null)
         .set('loading', true);
 
     case SIGN_IN_SUCCESS:
+    case LOG_IN_SUCCESS:
       return state
         .set('loading', false)
         .set('auth', payload.auth)
         .set('error', null);
 
     case SIGN_IN_ERROR:
+    case LOG_IN_ERROR:
       return state
         .set('loading', false)
         .set('error', null);
@@ -105,9 +117,13 @@ export const errorSelector = (state) => state[moduleName].error;
 /**
  * Action Creators
  * */
-export const signIn = ({ credentials }) => ({
-  type: SIGN_IN_REQUEST,
-  payload: { credentials }
+export const signIn = () => ({
+  type: SIGN_IN_REQUEST
+});
+
+export const logIn = ({ credentials, next }) => ({
+  type: LOG_IN_REQUEST,
+  payload: { credentials, next }
 });
 
 export const logOut = () => ({
@@ -137,29 +153,59 @@ export const logOutSaga = function* () {
   }
 };
 
-export const singInSaga = function* ({ payload }) {
+export const logInSaga = function* ({ payload }) {
   yield put({
-    type: SIGN_IN_START
+    type: LOG_IN_START
   });
   if (!payload.credentials) {
     yield put({
-      type: SIGN_IN_ERROR
+      type: LOG_IN_ERROR
     });
     return;
   }
   try {
     const auth = yield call(apiService.auth, payload.credentials);
+    if (auth) {
+      yield call(setItemToLocalStorage, 'auth', auth);
+      yield call(setTokenToLocalStorage, auth.token);
+    }
     yield put({
-      type: SIGN_IN_SUCCESS,
+      type: LOG_IN_SUCCESS,
       payload: { auth }
     });
+    if (payload.next) {
+      console.log('next', payload.next);
+
+      yield call(payload.next);
+    }
   } catch (error) {
     yield put({
-      type: SIGN_IN_ERROR,
-      payload: { saga: singInSaga, sagaPayload: payload },
+      type: LOG_IN_ERROR,
+      payload: { saga: logInSaga, sagaPayload: payload },
       error
     });
   }
+};
+
+export const singInSaga = function* () {
+  yield put({
+    type: SIGN_IN_START
+  });
+
+  const auth = yield call(getItemFromLocalStorage, 'auth');
+
+  if (!auth) {
+    yield put({
+      type: SIGN_IN_ERROR
+    });
+    return;
+  }
+  yield put({
+    type: SIGN_IN_SUCCESS,
+    payload: {
+      auth
+    }
+  });
 };
 
 export const enterSaga = function* () {
@@ -187,6 +233,7 @@ export function* saga() {
     takeLatest(ENTER_ERROR, errorSaga),
     takeLatest(SIGN_IN_ERROR, errorSaga),
     takeLatest(LOG_OUT_REQUEST, logOutSaga),
-    takeLatest(SIGN_IN_REQUEST, singInSaga)
+    takeLatest(SIGN_IN_REQUEST, singInSaga),
+    takeLatest(LOG_IN_REQUEST, logInSaga)
   ]);
 }
