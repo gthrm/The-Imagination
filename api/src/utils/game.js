@@ -150,7 +150,7 @@ export default class Game {
     game.players[playersTurn].myTurn = true;
     // assignPacks(game);
     // dealCards(game);
-    socketio.toPlayers(gameId).emit('game-started');
+    socketio.toPlayers(gameId).emit('game-started', 'game-started');
     socketio.toPlayers(gameId).emit('turn-change', game.players[playersTurn].name);
 
     return game;
@@ -164,8 +164,8 @@ export default class Game {
   */
   test(gameId, socketio) {
     socketio.emit('game-started');
-    socketio.toPlayers(gameId).emit('game-started');
-    socketio.toPlayers(gameId).emit('turn-change');
+    socketio.toPlayers(gameId).emit('game-started', 'game-started-test');
+    socketio.toPlayers(gameId).emit('turn-change', 'test');
     return {message: 'game-started'};
   }
 

@@ -1,9 +1,9 @@
 body {
-  --bg: white;
+  --bg: #635499;
   --tbg: #cccccc;
   --tc: white;
-  --textNormal: #222;
-  --textTitle: #222;
+  --textNormal: #bbadd9;
+  --textTitle: #fff;
   --textLink: rgb(255, 87, 0);
   --textLinkHover: rgba(255, 87, 0, 0.8);
   --hr: hsla(0, 0%, 0%, 0.2);
@@ -12,6 +12,8 @@ body {
   background-color: var(--bg);
   transition-duration: 0.2s;
   transition-property: background-color;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 600;
 }
 
 h4 {
@@ -32,6 +34,7 @@ body.dark {
 
 #root {
   min-height: 100vh;
+  display: flex;
 }
 
 a:active,

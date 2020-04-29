@@ -6,7 +6,9 @@ import { getTokenFromLocalStorage } from './tokenManagement';
 export const socket = io.connect('ws://localhost:8080');
 
 export const SocketEvents = {
-  jobsFresh: 'jobs+fresh',
+  joinGamePlayer: 'join-game-player',
+  gameStarted: 'game-started',
+  turnChange: 'turn-change'
 };
 
 const HOST = config.backend_url;

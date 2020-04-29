@@ -16,6 +16,7 @@ import {
   getItemFromLocalStorage
 } from '../../utils/localStorangeManagement';
 import { errorSaga } from './error';
+import { GAME_RESTORED } from './game';
 
 
 /**
@@ -193,7 +194,7 @@ export const singInSaga = function* () {
   });
 
   const auth = yield call(getItemFromLocalStorage, 'auth');
-
+  const restoredGame = yield call(getItemFromLocalStorage, 'game');
   if (!auth) {
     yield put({
       type: SIGN_IN_ERROR
@@ -206,6 +207,12 @@ export const singInSaga = function* () {
       auth
     }
   });
+  if (restoredGame) {
+    yield put({
+      type: GAME_RESTORED,
+      payload: { game: restoredGame }
+    });
+  }
 };
 
 export const enterSaga = function* () {

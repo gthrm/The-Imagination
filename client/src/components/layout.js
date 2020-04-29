@@ -1,10 +1,5 @@
 import React from 'react';
 import { css } from '@emotion/core';
-import { Link } from 'react-router-dom';
-
-const Footer = () => (
-  <div>Footer</div>
-);
 
 export default ({ children }) => (
   <div
@@ -12,6 +7,10 @@ export default ({ children }) => (
         margin: 0 auto;
         max-width: 700px;
         padding: 30px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
         @media (max-width: 550px) {
           padding: 10px;
         }
@@ -21,51 +20,6 @@ export default ({ children }) => (
         transition-property: background-color, color;
     `}
   >
-    <div
-      css={css`
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      `}
-    >
-      <Link to="/">
-        <h3
-          css={css`
-          margin-bottom: 20px;
-          margin-right: 20px;
-          display: inline-block;
-          font-style: normal;
-        `}
-        >
-          Home screen
-      </h3>
-      </Link>
-      <Link to="/auth">
-        <h3
-          css={css`
-          margin-bottom: 20px;
-          margin-right: 20px;
-          display: inline-block;
-          font-style: normal;
-        `}
-        >
-          Auth screen
-      </h3>
-      </Link>
-      <Link to="/other">
-        <h3
-          css={css`
-          margin-bottom: 20px;
-          margin-right: 20px;
-          display: inline-block;
-          font-style: normal;
-        `}
-        >
-          Other screen
-      </h3>
-      </Link>
-    </div>
     {children}
-    <Footer />
   </div>
 );

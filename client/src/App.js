@@ -6,7 +6,7 @@ import useActions from './hooks/useActions';
 import useComponentDidMount from './hooks/useComponentDidMount';
 import HomeScreen from './screens/HomeScreen';
 import Auth from './screens/Auth';
-import Other from './screens/Other';
+import JoinGame from './screens/JoinGame';
 import NotFound from './screens/404';
 import { signIn, loadingSelector } from './redux/ducks/auth';
 import Preloader from './components/preloader';
@@ -22,8 +22,8 @@ const App = () => {
         <Route path="/auth">
           <Auth />
         </Route>
-        <PrivateRoute path="/other">
-          <Other />
+        <PrivateRoute path="/joingame">
+          <JoinGame />
         </PrivateRoute>
         <PrivateRoute exact path="/">
           <HomeScreen />

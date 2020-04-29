@@ -10,6 +10,7 @@ export default function Preloader() {
         display: flex;
         justify-content: center;
         align-items: center;
+        background-color: var(--bg)
       `}
     >
       <div className="preloader"><div /></div>

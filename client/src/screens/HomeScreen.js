@@ -1,36 +1,45 @@
 import React from 'react';
 import { css } from '@emotion/core';
 import { useSelector } from 'react-redux';
+import { useHistory } from 'react-router-dom';
 import Layout from '../components/layout';
 import useActions from '../hooks/useActions';
 import { createGame, startGame, gameSelector } from '../redux/ducks/game';
+import Button from '../components/button';
 
 export default function HomeScreen() {
-  const title = 'HomeScreen';
+  const history = useHistory();
   const game = useSelector(gameSelector);
   const [createGameApi, startGameApi] = useActions([createGame, startGame]);
   const createGameHandler = () => createGameApi();
   const startGameHandler = () => startGameApi();
   const gameIsCreated = game;
-  // const gameIsStarted = game && game.started;
+
+  const joinTheGame = () => history.push('/joingame');
 
   return (
     <Layout>
       <div
         css={css`
-          font-size: 40px;
-      `}
+              flex-direction: column;
+              display: flex;
+              background-color: #463973;
+              border-radius: 5px;
+            `}
       >
-        {title}
+        <Button
+          onClick={gameIsCreated ? startGameHandler : createGameHandler}
+          title={gameIsCreated ? 'Начать игру' : 'Новая игра'}
+        />
+        {!gameIsCreated && (
+          <Button
+            onClick={joinTheGame}
+            title="Присоедениться к игре"
+          />
+        )}
       </div>
-      <button
-        type="button"
-        onClick={gameIsCreated ? startGameHandler : createGameHandler}
-      >
-        {gameIsCreated ? 'Начать игру' : 'Новая игра'}
-      </button>
       <div>
-        {!!game?.gameId && `Игра: ${game?.gameId}`}
+        {!!game?.gameId && <p>{`Идентификатор: ${game?.gameId}`}</p>}
       </div>
       <div>
         {!!game?.error && `Ошибка: ${game?.error}`}
