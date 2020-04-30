@@ -7,6 +7,7 @@ export const socket = io.connect('ws://localhost:8080');
 
 export const SocketEvents = {
   joinGamePlayer: 'join-game-player',
+  joinGameHost: 'join-game-host',
   gameStarted: 'game-started',
   turnChange: 'turn-change'
 };

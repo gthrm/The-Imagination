@@ -1,6 +1,11 @@
 import myAsyncAuthorizer from './BasicAuthorizer';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
 import {secret} from '../../etc/config.json';
+
+export const CARD_LENGTH = 10;
+
 /**
  * Возвращает случайное число от min до max
  * @param {number} min - max
@@ -72,3 +77,36 @@ export class HandlerGenerator {
     });
   }
 }
+
+/**
+ * Читает карты из папки с картами
+ * @param {string} dirnameExportImg - path
+ * @return {object}
+ */
+export async function readDir(dirnameExportImg = '../../assets/cards') {
+  const files = await fs.readdirSync(path.join(__dirname, dirnameExportImg));
+  const cardsData = files.map(
+      (file) => ({fileName: file, path: `/upload/${file}`}),
+  );
+  return shuffle(cardsData);
+}
+
+/**
+* Создает колоду карт
+* @param {object}deck - deck
+* @return {object}
+*/
+export function shuffle(deck) {
+  const shuffleDeck = deck;
+  if (Array.isArray(deck) && deck.length > 0) {
+    for (let i = 0; i < randomInteger(1000, 3000); i++) {
+      const location1 = Math.floor((Math.random() * deck.length));
+      const location2 = Math.floor((Math.random() * deck.length));
+      const tmp = deck[location1];
+      deck[location1] = deck[location2];
+      deck[location2] = tmp;
+    }
+  }
+  return shuffleDeck;
+}
+

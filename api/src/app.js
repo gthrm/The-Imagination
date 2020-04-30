@@ -7,7 +7,7 @@ import 'log-timestamp';
 
 // Разкомментировать в продакшене для подключения SSL сертификата
 // import https from 'https';
-// import path from 'path';
+import path from 'path';
 
 import http from 'http';
 
@@ -22,6 +22,7 @@ import Game from './utils/game';
 const port = process.env.PORT || serverPort;
 const game = new Game();
 const handlers = new HandlerGenerator();
+
 // Разкомментировать в продакшене для подключения SSL сертификата
 // const options = {
 //     key: fs.readFileSync(path.join(__dirname, '../../../etc/letsencrypt/live/site.ru', 'privkey.pem')),
@@ -42,6 +43,11 @@ const server = http.createServer(app);
 const socketio = io(server);
 
 app.post('/auth', handlers.login);
+
+app.get('/upload/:id', (req, res) => {
+  console.log(req.params.id);
+  res.sendFile(path.join(__dirname, `../assets/cards/${req.params.id}`));
+});
 
 app.get('/users', (req, res) => {
   db.listUsers(req.query.page).then((data) => res.send(data)).catch((err) => res.send(err));
@@ -64,9 +70,9 @@ app.get('/game/:gameId', checkToken, (req, res) => {
   res.send(findGame);
 });
 
-app.post('/game', checkToken, (req, res) => {
-  // const game = createGame();
-  res.send(game.createGame());
+app.post('/game', checkToken, async (req, res) => {
+  const gameData = await game.createGame();
+  res.send(gameData);
 });
 
 app.put('/game/:gameId', checkToken, (req, res) => {
@@ -74,7 +80,10 @@ app.put('/game/:gameId', checkToken, (req, res) => {
   res.send(startgame);
 });
 
-app.post('/test/:gameId', checkToken, checkToken, (req, res) => {
+app.post('/test/:gameId', checkToken, checkToken, async (req, res) => {
+  const cards = await game.dealCards();
+  console.log('--- cards', cards);
+
   const startgame = game.test(req.params.gameId, socketio);
   res.send(startgame);
 });

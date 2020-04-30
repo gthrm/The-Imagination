@@ -1,5 +1,9 @@
 import dockerNames from 'docker-names';
-import {randomInteger} from './otherUtils';
+import {
+  randomInteger,
+  readDir,
+  CARD_LENGTH,
+} from './otherUtils';
 
 /**
  * Класс Game
@@ -89,13 +93,18 @@ export default class Game {
   * Создание игры
   * @return {object}
   */
-  createGame() {
+  async createGame() {
     this.createTurnCells();
     this.createColors();
     const newGameId = this.getName();
+    const cards = await this.getCard();
+    if (!Array.isArray(cards) || cards.length < CARD_LENGTH) {
+      return {error: 'Не достаточно карт в папке с картами.'};
+    }
     const gameState = {
       gameId: newGameId,
       turnCells: this.turnCells,
+      cards,
       players: [],
       round: 0,
       winner: '',
@@ -208,5 +217,18 @@ export default class Game {
     socketio.toHost(gameId).emit('show-message', `${playerName} has joined the game.`);
     socketio.toHost(gameId).emit('game-state', game);
     return {message: 'Player joined'};
+  }
+
+  /**
+   * Создает колоду карт
+   * @return {object}
+   */
+  async getCard() {
+    try {
+      const cards = await readDir();
+      return cards;
+    } catch (error) {
+      return error;
+    }
   }
 }

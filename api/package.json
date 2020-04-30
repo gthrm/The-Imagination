@@ -4,7 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "yarn build && node ./build/app.js",
+    "start": "yarn build && sudo node --inspect ./build/app.js",
     "build": "./node_modules/.bin/babel src --out-dir build",
     "lint": "eslint '**/*.{js,jsx}' --quiet"
   },

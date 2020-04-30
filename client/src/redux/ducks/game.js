@@ -137,6 +137,7 @@ export const createGameSaga = function* ({ payload }) {
   try {
     const newGame = yield call(apiService.post, { url: '/game', body: null, header: null });
     yield call(setItemToLocalStorage, 'game', newGame);
+    socket.emit(SocketEvents.joinGameHost, newGame.gameId);
     yield put({
       type: CREATE_GAME_SUCCESS,
       payload: { game: newGame }
@@ -161,6 +162,8 @@ export const startGameSaga = function* ({ payload }) {
       const startedGame = yield call(apiService.put, { url: `/game/${gameId}`, body: null, header: null });
       const gameFata = startedGame?.error ? { ...thisGame, error: startedGame?.error } : startedGame;
       yield call(setItemToLocalStorage, 'game', gameFata);
+      yield call(setItemToLocalStorage, 'game', gameFata);
+
       yield put({
         type: START_GAME_SUCCESS,
         payload: { game: gameFata }
