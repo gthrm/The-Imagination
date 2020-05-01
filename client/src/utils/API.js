@@ -9,7 +9,9 @@ export const SocketEvents = {
   joinGamePlayer: 'join-game-player',
   joinGameHost: 'join-game-host',
   gameStarted: 'game-started',
-  turnChange: 'turn-change'
+  turnChange: 'turn-change',
+  showMessage: 'show-message',
+  gameState: 'game-state',
 };
 
 const HOST = config.backend_url;

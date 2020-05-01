@@ -3,8 +3,9 @@ import {
   randomInteger,
   readDir,
   CARD_LENGTH,
+  STARTING_HAND,
+  SocketEvents,
 } from './otherUtils';
-
 /**
  * Класс Game
  */
@@ -93,23 +94,24 @@ export default class Game {
   * Создание игры
   * @return {object}
   */
-  async createGame() {
+  createGame() {
     this.createTurnCells();
     this.createColors();
     const newGameId = this.getName();
-    const cards = await this.getCard();
-    if (!Array.isArray(cards) || cards.length < CARD_LENGTH) {
-      return {error: 'Не достаточно карт в папке с картами.'};
-    }
     const gameState = {
       gameId: newGameId,
       turnCells: this.turnCells,
-      cards,
+      roundStarted: false,
+      gameOver: false,
+      drawPile: [],
+      discardPile: [],
+      cards: [],
       players: [],
       round: 0,
       winner: '',
+      winningScore: 0,
       started: false,
-      createdOn: new Date(),
+      createdAt: new Date(),
     };
     this.games.push(gameState);
     return gameState;
@@ -134,7 +136,7 @@ export default class Game {
   * @param {object} socketio - socketio
   * @return {object}
   */
-  startGame(gameId, socketio) {
+  async startGame(gameId, socketio) {
     const game = this.games.find((g) => g.gameId === gameId.toLowerCase());
     if (!game) {
       return {error: 'This game does not exist.'};
@@ -149,7 +151,7 @@ export default class Game {
       return {error: 'This round has already started.'};
     }
     if (game.round > 0) {
-      // clearGameBoard(game);
+      this.clearGameBoard(game);
     }
 
     game.started = true;
@@ -157,8 +159,13 @@ export default class Game {
     game.roundStarted = true;
     const playersTurn = game.round % game.players.length;
     game.players[playersTurn].myTurn = true;
-    // assignPacks(game);
-    // dealCards(game);
+    await this.assignPacks(game);
+
+    if (!Array.isArray(game.cards) || game.cards.length < CARD_LENGTH) {
+      return {error: 'Не достаточно карт в папке с картами.'};
+    }
+
+    this.dealCards(game);
     socketio.toPlayers(gameId).emit('game-started', 'game-started');
     socketio.toPlayers(gameId).emit('turn-change', game.players[playersTurn].name);
 
@@ -178,6 +185,49 @@ export default class Game {
     return {message: 'game-started'};
   }
 
+  /**
+  * Раздать игрокам карты
+  * @param {object} game - game
+  */
+  dealCards(game) {
+    for (let i = 0; i < STARTING_HAND; i++) {
+      for (const player of game.players) {
+        const newCard = this.drawCard(game.cards);
+        if (newCard.value === '3' && newCard.colour === 'red') {
+          player.redThrees.push(newCard);
+          player.extraFirstTurn++;
+        } else {
+          player.cards.push(newCard);
+        }
+      }
+    }
+  }
+
+  /**
+  * Выдать карту
+  * @param {object} cards - cards
+  * @return {object}
+  */
+  drawCard(cards) {
+    const randomIndex = Math.floor(Math.random() * cards.length);
+    const chosenCard = cards.splice(randomIndex, 1);
+    return chosenCard[0];
+  };
+
+  /**
+  * Очистить GameBoard
+  * @param {object} game - game
+  */
+  clearGameBoard(game) {
+    game.card = [];
+    game.discardPile = [];
+    for (const player of game.players) {
+      player.cards = [];
+      player.meld = {};
+      player.myTurn = false;
+      player.hasDrawn = false;
+    }
+  };
 
   /**
   * Присоединение игрока
@@ -214,21 +264,21 @@ export default class Game {
     };
     game.players.push(player);
 
-    socketio.toHost(gameId).emit('show-message', `${playerName} has joined the game.`);
-    socketio.toHost(gameId).emit('game-state', game);
+    socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} has joined the game.`);
+    socketio.toHost(gameId).emit(SocketEvents.gameState, game);
     return {message: 'Player joined'};
   }
 
   /**
-   * Создает колоду карт
-   * @return {object}
-   */
-  async getCard() {
+  * Создает колоду карт
+  * @param {object} game - game
+  */
+  async assignPacks(game) {
     try {
       const cards = await readDir();
-      return cards;
+      game.cards = cards;
     } catch (error) {
-      return error;
+      console.error(error);
     }
   }
 }

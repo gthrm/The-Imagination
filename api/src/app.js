@@ -70,13 +70,13 @@ app.get('/game/:gameId', checkToken, (req, res) => {
   res.send(findGame);
 });
 
-app.post('/game', checkToken, async (req, res) => {
-  const gameData = await game.createGame();
+app.post('/game', checkToken, (req, res) => {
+  const gameData = game.createGame();
   res.send(gameData);
 });
 
-app.put('/game/:gameId', checkToken, (req, res) => {
-  const startgame = game.startGame(req.params.gameId, socketio);
+app.put('/game/:gameId', checkToken, async (req, res) => {
+  const startgame = await game.startGame(req.params.gameId, socketio);
   res.send(startgame);
 });
 

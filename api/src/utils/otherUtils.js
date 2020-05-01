@@ -5,6 +5,7 @@ import path from 'path';
 import {secret} from '../../etc/config.json';
 
 export const CARD_LENGTH = 10;
+export const STARTING_HAND = 4;
 
 /**
  * Возвращает случайное число от min до max
@@ -110,3 +111,11 @@ export function shuffle(deck) {
   return shuffleDeck;
 }
 
+export const SocketEvents = {
+  joinGamePlayer: 'join-game-player',
+  joinGameHost: 'join-game-host',
+  gameStarted: 'game-started',
+  turnChange: 'turn-change',
+  showMessage: 'show-message',
+  gameState: 'game-state',
+};
