@@ -281,4 +281,42 @@ export default class Game {
       console.error(error);
     }
   }
+
+  /**
+   * Выдать данные по игроку
+   * @param {string} playerName - playerName
+   * @param {string} gameId - gameId
+   * @return {object}
+   */
+  getPlayerCards(playerName, gameId) {
+    const {game, player, error} = this.getGameAndPlayer(gameId, playerName);
+    if (error) {
+      return {error};
+    }
+    if (!game.started || !game.roundStarted) {
+      return {waiting: true};
+    }
+
+    const hand = player.cards;
+    return hand;
+  };
+
+  /**
+  * Выдать данные по игроку
+  * @param {string} gameId - gameId
+  * @param {string} playerName - playerName
+  * @return {object}
+  */
+  getGameAndPlayer(gameId, playerName) {
+    const game = this.games.find((g) => g.gameId === gameId.toLowerCase());
+    if (!game) {
+      return {error: `${gameId} game does not exist.`};
+    }
+    const player = game.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
+    if (!player) {
+      return {error: `${playerName} player does not exist in this game.`};
+    }
+
+    return {game, player};
+  }
 }

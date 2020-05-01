@@ -93,6 +93,11 @@ app.post('/player/:playerName/:gameId', checkToken, (req, res) => {
   res.send(message);
 });
 
+app.get('/cards/:playerName/:gameId', (req, res) => {
+  const cards = game.getPlayerCards(req.params.playerName, req.params.gameId);
+  res.send(cards);
+});
+
 app.get('/items', checkToken, (req, res) =>
   db.listItems(req.query.page, req.query.expiried)
       .then((data) => res.send(data))
