@@ -1,3 +1,4 @@
+/* eslint-disable new-cap */
 import dockerNames from 'docker-names';
 import {
   randomInteger,
@@ -161,7 +162,7 @@ export default class Game {
     game.players[playersTurn].myTurn = true;
     await this.assignPacks(game);
 
-    if (!Array.isArray(game.cards) || game.cards.length < CARD_LENGTH) {
+    if (!Array.isArray(game.cards) || game.cards.length < CARD_LENGTH(game.players.length)) {
       return {error: 'Не достаточно карт в папке с картами.'};
     }
 

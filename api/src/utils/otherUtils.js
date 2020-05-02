@@ -4,8 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import {secret} from '../../etc/config.json';
 
-export const CARD_LENGTH = 10;
-export const STARTING_HAND = 4;
+export const CARD_LENGTH = (playersLength) => playersLength * STARTING_HAND;
+export const STARTING_HAND = 6;
 
 /**
  * Возвращает случайное число от min до max

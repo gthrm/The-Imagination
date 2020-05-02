@@ -16,6 +16,7 @@ export default function Card(props) {
         background-color: #eab000;
         border-radius: 15px;
         margin: 5px;
+        overflow: hidden;
       `}
     >
       <img

@@ -2,6 +2,7 @@
 /coverage
 /lol
 /upload/*
+/assets/cards/*
 /build/*
 
 .DS_Store

@@ -66,10 +66,10 @@ export default function PlayerGameComponent(props) {
         && (
         <div
           css={css`
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-    `}
+              display: flex;
+              flex-direction: column;
+              flex: 1;
+          `}
         >
           <h4>👩‍💻👨‍💻 ожидание других игроков</h4>
           <h4>{`🎮 - ${me.gameId.toUpperCase()}`}</h4>
