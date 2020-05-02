@@ -18,7 +18,6 @@ import {
 } from '../redux/ducks/game';
 
 export default function JoinGame() {
-  const title = 'JoinGame';
   const [joinGameApi] = useActions([joinGame]);
   const joinData = useSelector(joinDataSelector);
   const turn = useSelector(turnSelector);
@@ -27,13 +26,6 @@ export default function JoinGame() {
 
   return (
     <Layout>
-      <div
-        css={css`
-          font-size: 40px;
-      `}
-      >
-        {title}
-      </div>
       {!!turn?.data && (
       <div
         css={css`
@@ -99,7 +91,7 @@ export default function JoinGame() {
       )}
 
       <p>
-        {!gameStatusMessage?.data ? joinData?.error || joinData?.message : gameStatusMessage?.data}
+        {!gameStatusMessage?.data ? joinData?.message : gameStatusMessage?.data}
       </p>
     </Layout>
   );

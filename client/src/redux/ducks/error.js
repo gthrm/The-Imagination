@@ -129,6 +129,22 @@ export const errorSaga = function* ({ error, payload }) {
         });
         break;
 
+      case error.response.status === 404 && error.response.data.error.message === 'Game does not exist':
+        yield call(getAlert, 'Ошибка', 'Игра не существует или уже завершилась, создайте новую игру');
+        yield put({
+          type: ERROR_SUCCESS,
+          error
+        });
+        break;
+
+      case error.response.status === 400 && error.response.data.error.message === 'This game has too many players, please join a different game.':
+        yield call(getAlert, 'Ошибка', 'В игре максимальное количество человек, присоеденитесь к другой игре');
+        yield put({
+          type: ERROR_SUCCESS,
+          error
+        });
+        break;
+
       case error.response.status === 400 && error.response.data.message === 'No suitable tables found':
         yield call(getAlert, 'Ошибка', 'Нет свободных мест на выбранную вами дату и время');
         yield put({

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import ReactNotification from 'react-notifications-component';
 import PrivateRoute from './components/private-route';
 import useActions from './hooks/useActions';
 import useComponentDidMount from './hooks/useComponentDidMount';
@@ -10,6 +11,7 @@ import JoinGame from './screens/JoinGame';
 import NotFound from './screens/404';
 import { signIn, loadingSelector } from './redux/ducks/auth';
 import Preloader from './components/preloader';
+import 'react-notifications-component/dist/theme.css';
 
 const App = () => {
   const loading = useSelector(loadingSelector);
@@ -32,6 +34,7 @@ const App = () => {
           <NotFound />
         </Route>
       </Switch>
+      <ReactNotification />
     </Router>
   );
 };

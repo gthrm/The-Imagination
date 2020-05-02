@@ -67,6 +67,9 @@ app.post('/user', checkToken, (req, res) => {
 
 app.get('/game/:gameId', checkToken, (req, res) => {
   const findGame = game.findGame(req.params.gameId);
+  if (findGame.error) {
+    res.status(findGame.error.code || 500);
+  }
   res.send(findGame);
 });
 
@@ -77,6 +80,9 @@ app.post('/game', checkToken, (req, res) => {
 
 app.put('/game/:gameId', checkToken, async (req, res) => {
   const startgame = await game.startGame(req.params.gameId, socketio);
+  if (startgame.error) {
+    res.status(startgame.error.code || 500);
+  }
   res.send(startgame);
 });
 

@@ -3,6 +3,7 @@ import {
 } from 'redux-saga/effects';
 import { eventChannel } from 'redux-saga';
 import { Record } from 'immutable';
+import showMessage from '../../utils/notificationUtils';
 import { name } from '../../../package.json';
 import {
   setItemToLocalStorage
@@ -31,11 +32,19 @@ export const JOIN_GAME_START = `${prefix}/JOIN_GAME_START`;
 export const JOIN_GAME_SUCCESS = `${prefix}/JOIN_GAME_SUCCESS`;
 export const JOIN_GAME_ERROR = `${prefix}/JOIN_GAME_ERROR`;
 
+export const GAME_RESTORED_REQUEST = `${prefix}/GAME_RESTORED_REQUEST`;
+export const GAME_RESTORED_START = `${prefix}/GAME_RESTORED_START`;
+export const GAME_RESTORED_SUCCESS = `${prefix}/GAME_RESTORED_SUCCESS`;
+export const GAME_RESTORED_ERROR = `${prefix}/GAME_RESTORED_ERROR`;
+
 export const GAME_UPDATED = `${prefix}/GAME_UPDATED`;
 export const GAME_RESTORED = `${prefix}/GAME_RESTORED`;
 
 export const REALTIME_GAME_STATUS_UPDATED = `${prefix}/REALTIME_GAME_STATUS_UPDATED`;
 export const REALTIME_TURN_CHANGED = `${prefix}/REALTIME_TURN_CHANGED`;
+export const REALTIME_SHOW_MESSAGE = `${prefix}/REALTIME_SHOW_MESSAGE`;
+
+export const FETCH_CARD_SUCCESS = `${prefix}/FETCH_CARD_SUCCESS`;
 
 
 /**
@@ -44,8 +53,10 @@ export const REALTIME_TURN_CHANGED = `${prefix}/REALTIME_TURN_CHANGED`;
 export const ReducerRecord = Record({
   game: null,
   you: null,
+  yourCards: [],
   turn: null,
   gameStatusMessage: null,
+  showMessage: null,
   joinData: null,
   loading: true
 });
@@ -56,16 +67,12 @@ export default function reducer(state = new ReducerRecord(), action) {
   switch (type) {
     case CREATE_GAME_START:
     case START_GAME_START:
-      return state.set('error', null);
-
     case JOIN_GAME_START:
-      return state
-        .set('you', payload.you)
-        .set('error', null);
+      return state.set('error', null);
 
     case CREATE_GAME_SUCCESS:
     case START_GAME_SUCCESS:
-    case GAME_RESTORED:
+    case GAME_RESTORED_SUCCESS:
       return state
         .set('loading', false)
         .set('error', null)
@@ -75,6 +82,7 @@ export default function reducer(state = new ReducerRecord(), action) {
       return state
         .set('loading', false)
         .set('error', null)
+        .set('you', payload.you)
         .set('joinData', payload.joinData);
 
     case REALTIME_GAME_STATUS_UPDATED:
@@ -85,6 +93,16 @@ export default function reducer(state = new ReducerRecord(), action) {
     case REALTIME_TURN_CHANGED:
       return state
         .set('turn', payload.turn)
+        .set('error', null);
+
+    case REALTIME_SHOW_MESSAGE:
+      return state
+        .set('showMessage', payload.showMessage)
+        .set('error', null);
+
+    case FETCH_CARD_SUCCESS:
+      return state
+        .set('yourCards', payload.yourCards)
         .set('error', null);
 
     case CREATE_GAME_ERROR:
@@ -162,7 +180,6 @@ export const startGameSaga = function* ({ payload }) {
       const startedGame = yield call(apiService.put, { url: `/game/${gameId}`, body: null, header: null });
       const gameFata = startedGame?.error ? { ...thisGame, error: startedGame?.error } : startedGame;
       yield call(setItemToLocalStorage, 'game', gameFata);
-      yield call(setItemToLocalStorage, 'game', gameFata);
 
       yield put({
         type: START_GAME_SUCCESS,
@@ -180,26 +197,55 @@ export const startGameSaga = function* ({ payload }) {
 
 export const joinGameSaga = function* ({ payload }) {
   yield put({
-    type: JOIN_GAME_START,
-    payload: {
-      you: {
-        playerName: payload.playerName,
-        gameId: payload.gameId
-      }
-    }
+    type: JOIN_GAME_START
   });
   if (payload.playerName && payload.gameId) {
     try {
       const joinData = yield call(apiService.post, { url: `/player/${payload.playerName}/${payload.gameId}`, body: null, header: null });
+      yield call(setItemToLocalStorage, 'you', {
+        playerName: payload.playerName,
+        gameId: payload.gameId
+      });
       yield put({
         type: JOIN_GAME_SUCCESS,
-        payload: { joinData }
+        payload: {
+          joinData,
+          you: {
+            playerName: payload.playerName,
+            gameId: payload.gameId
+          }
+        }
       });
       socket.emit(SocketEvents.joinGamePlayer, payload.gameId);
     } catch (error) {
       yield put({
         type: JOIN_GAME_ERROR,
         payload: { saga: joinGameSaga, sagaPayload: payload },
+        error
+      });
+    }
+  }
+};
+
+export const restoredGameSaga = function* ({ payload }) {
+  yield put({
+    type: GAME_RESTORED_START
+  });
+  if (payload.game) {
+    const { gameId } = payload.game;
+    try {
+      const restoredGame = yield call(apiService.get, `/game/${gameId}`);
+      console.log('restoredGame', restoredGame);
+
+      yield put({
+        type: GAME_RESTORED_SUCCESS,
+        payload: { game: restoredGame }
+      });
+      socket.emit(SocketEvents.joinGameHost, gameId);
+    } catch (error) {
+      yield put({
+        type: GAME_RESTORED_ERROR,
+        payload: { saga: restoredGameSaga, sagaPayload: payload },
         error
       });
     }
@@ -219,10 +265,21 @@ export const gameStartedRealtimeSyncSaga = function* () {
 
   while (true) {
     const gameStatusMessage = yield take(chanel);
+    const player = yield select(youSelector);
+    const yourCards = yield call(apiService.get, `/cards/${player.playerName}/${player.gameId}`);
+    if (yourCards.waiting) {
+      showMessage({ message: 'Игра скоро начнётся 🎮', type: 'info' });
+    } else {
+      yield put({
+        type: FETCH_CARD_SUCCESS,
+        payload: { yourCards }
+      });
+    }
     yield put({
       type: REALTIME_GAME_STATUS_UPDATED,
       payload: { gameStatusMessage }
     });
+    showMessage({ message: 'Игра началась 🎮', type: 'info' });
   }
 };
 
@@ -245,15 +302,40 @@ export const turnChangeRealtimeSyncSaga = function* () {
   }
 };
 
+const showMessageEventChannel = () => {
+  const subscribe = (emitter) => {
+    socket.on(SocketEvents.showMessage, (data) => emitter({ data }));
+    return () => socket.removeListener(SocketEvents.showMessage, emitter);
+  };
+  return eventChannel(subscribe);
+};
+
+export const showMessageRealtimeSyncSaga = function* () {
+  const chanel = yield call(showMessageEventChannel);
+  while (true) {
+    const newShowMessage = yield take(chanel);
+    yield put({
+      type: REALTIME_SHOW_MESSAGE,
+      payload: { showMessage: newShowMessage }
+    });
+    showMessage({
+      message: newShowMessage.data
+    });
+  }
+};
+
 export function* saga() {
   yield all([
     takeLatest(START_GAME_ERROR, errorSaga),
     takeLatest(CREATE_GAME_ERROR, errorSaga),
     takeLatest(JOIN_GAME_ERROR, errorSaga),
+    takeLatest(GAME_RESTORED_ERROR, errorSaga),
     takeLatest(START_GAME_REQUEST, startGameSaga),
+    takeLatest(GAME_RESTORED_REQUEST, restoredGameSaga),
     takeLatest(CREATE_GAME_REQUEST, createGameSaga),
-    takeLatest(JOIN_GAME_REQUEST, joinGameSaga),
+    takeLatest(JOIN_GAME_REQUEST, joinGameSaga)
   ]);
   yield fork(gameStartedRealtimeSyncSaga);
   yield fork(turnChangeRealtimeSyncSaga);
+  yield fork(showMessageRealtimeSyncSaga);
 }

@@ -125,7 +125,7 @@ export default class Game {
   findGame(gameId) {
     const game = this.games.find((g) => g.gameId === gameId.toLowerCase());
     if (!game) {
-      return {error: 'Game does not exist'};
+      return {error: {message: 'Game does not exist', code: 404}};
     }
     return game;
   }
@@ -139,7 +139,7 @@ export default class Game {
   async startGame(gameId, socketio) {
     const game = this.games.find((g) => g.gameId === gameId.toLowerCase());
     if (!game) {
-      return {error: 'This game does not exist.'};
+      return {error: 'This game does not exist.', code: 404};
     }
     if (game.gameOver) {
       return {error: 'This game is done, you must create a new one.'};
@@ -239,7 +239,7 @@ export default class Game {
   playerJoins(playerName, gameId, socketio) {
     const game = this.games.find((g) => g.gameId === gameId.toLowerCase());
     if (!game) {
-      return {error: 'This game does not exist.'};
+      return {error: {message: 'This game does not exist.', code: 400}};
     }
 
     const playerExists = game.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
@@ -248,10 +248,10 @@ export default class Game {
     }
 
     if (game.started) {
-      return {error: 'This game has already started, please join a different game.'};
+      return {error: {message: 'This game has already started, please join a different game.', code: 400}};
     }
     if (game.players.length === 6) {
-      return {error: 'This game has too many players, please join a different game.'};
+      return {error: {message: 'This game has too many players, please join a different game.', code: 400}};
     }
 
     const player = {
