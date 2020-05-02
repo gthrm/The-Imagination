@@ -12,6 +12,9 @@ import {
   setRefreshTokenToLocalStorage,
   removeTokenFromLocalStorage
 } from '../../utils/tokenManagement';
+
+import { clearStorage } from '../../utils/localStorangeManagement';
+import refreshPage from '../../utils/refreshPage';
 import erorAlert, { getAlert } from '../../utils/erorAlert';
 import apiService from '../../utils/API';
 
@@ -143,6 +146,25 @@ export const errorSaga = function* ({ error, payload }) {
           type: ERROR_SUCCESS,
           error
         });
+        break;
+
+      case error.response.status === 400 && error.response.data.error.message === 'This round has already started.':
+        yield call(getAlert, 'Ошибка', 'Этот раунд уже начат');
+        yield put({
+          type: ERROR_SUCCESS,
+          error
+        });
+        break;
+
+      case error.response.status === 404 && error.response.data.error.message === 'player does not exist in this game.':
+      case error.response.status === 404 && error.response.data.error.message === 'game does not exist.':
+        yield call(getAlert, 'Ошибка', 'Игра или игрок с таким именем не найден', refreshPage);
+        yield call(clearStorage);
+        yield put({
+          type: ERROR_SUCCESS,
+          error
+        });
+
         break;
 
       case error.response.status === 400 && error.response.data.message === 'No suitable tables found':

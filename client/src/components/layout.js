@@ -6,6 +6,8 @@ export default ({ children }) => (
     css={css`
         margin: 0 auto;
         max-width: 700px;
+        min-width: 300px;
+        flex: 1;
         padding: 30px;
         display: flex;
         flex-direction: column;

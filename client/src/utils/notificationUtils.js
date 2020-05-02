@@ -1,13 +1,11 @@
 import { store } from 'react-notifications-component';
 
 const showMessage = ({
-  title = 'Уведомление',
   message = '',
   type = 'success',
   insert = 'top',
   container = 'top-right',
 }) => store.addNotification({
-  title,
   message,
   type,
   insert,

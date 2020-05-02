@@ -1,7 +1,7 @@
 /* eslint-disable react/button-has-type */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import React from 'react';
-import { css } from '@emotion/core';
+
 import {
   Formik, Field, Form, ErrorMessage
 } from 'formik';
@@ -12,43 +12,22 @@ import useActions from '../hooks/useActions';
 import {
   joinGame,
   joinDataSelector,
+  playerSelector,
   turnSelector,
-  gameStatusMessageSelector,
   youSelector
 } from '../redux/ducks/game';
+import PlayerGameComponent from '../components/PlayerGameComponent';
 
 export default function JoinGame() {
   const [joinGameApi] = useActions([joinGame]);
   const joinData = useSelector(joinDataSelector);
-  const turn = useSelector(turnSelector);
-  const gameStatusMessage = useSelector(gameStatusMessageSelector);
+  const player = useSelector(playerSelector);
   const me = useSelector(youSelector);
+  const turn = useSelector(turnSelector);
 
   return (
     <Layout>
-      {!!turn?.data && (
-      <div
-        css={css`
-          font-size: 30px;
-      `}
-      >
-        {turn?.data === me?.playerName ? 'Ваш ход' : `Ходит ${turn?.data}`}
-      </div>
-      )}
-      <div>
-        {!!me?.playerName && (
-          <p>
-            Игрок:
-            <h4>{me.playerName.toUpperCase()}</h4>
-          </p>
-        )}
-        {!!me?.gameId && (
-          <p>
-            Игра:
-            <h4>{me.gameId.toUpperCase()}</h4>
-          </p>
-        )}
-      </div>
+      <PlayerGameComponent me={me} turn={turn} player={player} />
       {!joinData?.message && (
         <Formik
           initialValues={{
@@ -89,10 +68,6 @@ export default function JoinGame() {
           )}
         </Formik>
       )}
-
-      <p>
-        {!gameStatusMessage?.data ? joinData?.message : gameStatusMessage?.data}
-      </p>
     </Layout>
   );
 }

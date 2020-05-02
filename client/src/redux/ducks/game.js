@@ -37,6 +37,11 @@ export const GAME_RESTORED_START = `${prefix}/GAME_RESTORED_START`;
 export const GAME_RESTORED_SUCCESS = `${prefix}/GAME_RESTORED_SUCCESS`;
 export const GAME_RESTORED_ERROR = `${prefix}/GAME_RESTORED_ERROR`;
 
+export const FETCH_PLAYER_REQUEST = `${prefix}/FETCH_PLAYER_REQUEST`;
+export const FETCH_PLAYER_START = `${prefix}/FETCH_PLAYER_START`;
+export const FETCH_PLAYER_SUCCESS = `${prefix}/FETCH_PLAYER_SUCCESS`;
+export const FETCH_PLAYER_ERROR = `${prefix}/FETCH_PLAYER_ERROR`;
+
 export const GAME_UPDATED = `${prefix}/GAME_UPDATED`;
 export const GAME_RESTORED = `${prefix}/GAME_RESTORED`;
 
@@ -53,6 +58,7 @@ export const FETCH_CARD_SUCCESS = `${prefix}/FETCH_CARD_SUCCESS`;
 export const ReducerRecord = Record({
   game: null,
   you: null,
+  player: null,
   yourCards: [],
   turn: null,
   gameStatusMessage: null,
@@ -68,6 +74,7 @@ export default function reducer(state = new ReducerRecord(), action) {
     case CREATE_GAME_START:
     case START_GAME_START:
     case JOIN_GAME_START:
+    case FETCH_PLAYER_START:
       return state.set('error', null);
 
     case CREATE_GAME_SUCCESS:
@@ -84,6 +91,12 @@ export default function reducer(state = new ReducerRecord(), action) {
         .set('error', null)
         .set('you', payload.you)
         .set('joinData', payload.joinData);
+
+    case FETCH_PLAYER_SUCCESS:
+      return state
+        .set('loading', false)
+        .set('error', null)
+        .set('player', payload.player);
 
     case REALTIME_GAME_STATUS_UPDATED:
       return state
@@ -108,6 +121,7 @@ export default function reducer(state = new ReducerRecord(), action) {
     case CREATE_GAME_ERROR:
     case START_GAME_ERROR:
     case JOIN_GAME_ERROR:
+    case FETCH_PLAYER_ERROR:
       return state
         .set('loading', false)
         .set('error', error);
@@ -121,6 +135,7 @@ export default function reducer(state = new ReducerRecord(), action) {
    * Selectors
    * */
 export const gameSelector = (state) => state[moduleName].game;
+export const playerSelector = (state) => state[moduleName].player;
 export const turnSelector = (state) => state[moduleName].turn;
 export const youSelector = (state) => state[moduleName].you;
 export const gameStatusMessageSelector = (state) => state[moduleName].gameStatusMessage;
@@ -217,10 +232,40 @@ export const joinGameSaga = function* ({ payload }) {
         }
       });
       socket.emit(SocketEvents.joinGamePlayer, payload.gameId);
+      // const you = yield select(youSelector);
+      // if (you) {
+      //   const { playerName, gameId } = you;
+      //   yield put({
+      //     type: FETCH_PLAYER_REQUEST,
+      //     payload: { playerName, gameId }
+      //   });
+      // }
     } catch (error) {
       yield put({
         type: JOIN_GAME_ERROR,
         payload: { saga: joinGameSaga, sagaPayload: payload },
+        error
+      });
+    }
+  }
+};
+
+export const fetchPlayerSaga = function* ({ payload }) {
+  yield put({
+    type: FETCH_PLAYER_START
+  });
+  if (payload.playerName && payload.gameId) {
+    try {
+      const player = yield call(apiService.get, `/player/${payload.playerName}/${payload.gameId}`);
+
+      yield put({
+        type: FETCH_PLAYER_SUCCESS,
+        payload: { player }
+      });
+    } catch (error) {
+      yield put({
+        type: FETCH_PLAYER_ERROR,
+        payload: { saga: fetchPlayerSaga, sagaPayload: payload },
         error
       });
     }
@@ -295,6 +340,15 @@ export const turnChangeRealtimeSyncSaga = function* () {
   const chanel = yield call(turnChangeEventChannel);
   while (true) {
     const turn = yield take(chanel);
+    const you = yield select(youSelector);
+    if (you) {
+      const { playerName, gameId } = you;
+      yield put({
+        type: FETCH_PLAYER_REQUEST,
+        payload: { playerName, gameId }
+      });
+    }
+
     yield put({
       type: REALTIME_TURN_CHANGED,
       payload: { turn }
@@ -330,7 +384,9 @@ export function* saga() {
     takeLatest(CREATE_GAME_ERROR, errorSaga),
     takeLatest(JOIN_GAME_ERROR, errorSaga),
     takeLatest(GAME_RESTORED_ERROR, errorSaga),
+    takeLatest(FETCH_PLAYER_ERROR, errorSaga),
     takeLatest(START_GAME_REQUEST, startGameSaga),
+    takeLatest(FETCH_PLAYER_REQUEST, fetchPlayerSaga),
     takeLatest(GAME_RESTORED_REQUEST, restoredGameSaga),
     takeLatest(CREATE_GAME_REQUEST, createGameSaga),
     takeLatest(JOIN_GAME_REQUEST, joinGameSaga)

@@ -39,7 +39,7 @@ export default function HomeScreen() {
         )}
       </div>
       <div>
-        {!!game?.gameId && <p>{`Идентификатор: ${game?.gameId}`}</p>}
+        {!!game?.gameId && <p>{`🎮 - ${game?.gameId}`}</p>}
       </div>
       <div>
         {!!game?.error && `Ошибка: ${game?.error}`}

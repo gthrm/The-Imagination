@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import config from '../config';
 import { getTokenFromLocalStorage } from './tokenManagement';
 
-export const socket = io.connect('ws://localhost:8080');
+export const socket = io.connect('ws://192.168.31.219:8080');
 
 export const SocketEvents = {
   joinGamePlayer: 'join-game-player',

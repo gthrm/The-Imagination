@@ -7,6 +7,9 @@ export const removeItemFromLocalStorage = (itemName) => localStorage.removeItem(
 
 export const getItemFromLocalStorage = (itemName) => isJsonString(localStorage.getItem(`${name}-${itemName}`));
 
+export const clearStorage = () => localStorage.clear();
+
+
 export const isJsonString = (str) => {
   try {
     JSON.parse(str);

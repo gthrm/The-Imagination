@@ -139,16 +139,16 @@ export default class Game {
   async startGame(gameId, socketio) {
     const game = this.games.find((g) => g.gameId === gameId.toLowerCase());
     if (!game) {
-      return {error: 'This game does not exist.', code: 404};
+      return {error: {message: 'This game does not exist.', code: 404}};
     }
     if (game.gameOver) {
-      return {error: 'This game is done, you must create a new one.'};
+      return {error: {message: 'This game is done, you must create a new one.', code: 400}};
     }
     if (game.players.length < 2) {
-      return {error: 'A game needs at least two players.'};
+      return {error: {message: 'A game needs at least two players.', code: 400}};
     }
     if (game.roundStarted) {
-      return {error: 'This round has already started.'};
+      return {error: {message: 'This round has already started.', code: 400}};
     }
     if (game.round > 0) {
       this.clearGameBoard(game);
@@ -302,7 +302,7 @@ export default class Game {
   };
 
   /**
-  * Выдать данные по игроку
+  * Выдать данные по игроку и игре
   * @param {string} gameId - gameId
   * @param {string} playerName - playerName
   * @return {object}
@@ -310,13 +310,31 @@ export default class Game {
   getGameAndPlayer(gameId, playerName) {
     const game = this.games.find((g) => g.gameId === gameId.toLowerCase());
     if (!game) {
-      return {error: `${gameId} game does not exist.`};
+      return {error: {message: `game does not exist.`, code: 404}};
     }
     const player = game.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
     if (!player) {
-      return {error: `${playerName} player does not exist in this game.`};
+      return {error: {message: `player does not exist in this game.`, code: 404}};
     }
 
     return {game, player};
+  }
+
+  /**
+   * Выдать данные по игроку
+   * @param {string} gameId - gameId
+   * @param {string} playerName - playerName
+   * @return {object}
+   */
+  getPlayer(gameId, playerName) {
+    const game = this.games.find((g) => g.gameId === gameId.toLowerCase());
+    if (!game) {
+      return {error: {message: `game does not exist.`, code: 404}};
+    }
+    const player = game.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
+    if (!player) {
+      return {error: {message: `player does not exist in this game.`, code: 404}};
+    }
+    return player;
   }
 }

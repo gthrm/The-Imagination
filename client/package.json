@@ -62,7 +62,7 @@
     "yaml-loader": "^0.6.0"
   },
   "scripts": {
-    "start": "NODE_ENV=development webpack-dev-server --hot --open",
+    "start": "NODE_ENV=development webpack-dev-server --hot --open --host 0.0.0.0",
     "build": "NODE_ENV=production webpack",
     "prod": "GENERATE_SOURCEMAP=false yarn build",
     "lint": "eslint '**/*.{js,jsx}' --quiet",

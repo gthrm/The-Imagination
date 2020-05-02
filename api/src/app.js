@@ -94,6 +94,14 @@ app.post('/test/:gameId', checkToken, checkToken, async (req, res) => {
   res.send(startgame);
 });
 
+app.get('/player/:playerName/:gameId', checkToken, (req, res) => {
+  const player = game.getPlayer(req.params.gameId, req.params.playerName);
+  if (player.error) {
+    res.status(player.error.code || 500);
+  }
+  res.send(player);
+});
+
 app.post('/player/:playerName/:gameId', checkToken, (req, res) => {
   const message = game.playerJoins(req.params.playerName, req.params.gameId, socketio);
   res.send(message);

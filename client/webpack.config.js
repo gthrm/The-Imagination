@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const config = require('./config/config.yml');
 
-config.backend_url = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+config.backend_url = process.env.REACT_APP_API_URL || 'http://192.168.31.219:8080';
 
 module.exports = {
   mode: process.env.NODE_ENV || 'development',
