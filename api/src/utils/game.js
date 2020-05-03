@@ -96,12 +96,12 @@ export default class Game {
   * @return {object}
   */
   createGame() {
-    this.createTurnCells();
+    // this.createTurnCells();
     this.createColors();
     const newGameId = this.getName();
     const gameState = {
       gameId: newGameId,
-      turnCells: this.turnCells,
+      // turnCells: this.turnCells,
       roundStarted: false,
       gameOver: false,
       drawPile: [],
@@ -111,6 +111,8 @@ export default class Game {
       round: 0,
       winner: '',
       winningScore: 0,
+      riddle: null,
+      voting: false,
       started: false,
       createdAt: new Date(),
     };
@@ -154,19 +156,18 @@ export default class Game {
     if (game.round > 0) {
       this.clearGameBoard(game);
     }
-
+    await this.assignPacks(game);
+    if (!Array.isArray(game.cards) || game.cards.length < CARD_LENGTH(game.players.length)) {
+      return {error: {message: 'not enough cards in the card folder.', code: 400}};
+    }
     game.started = true;
     game.round++;
     game.roundStarted = true;
     const playersTurn = game.round % game.players.length;
     game.players[playersTurn].myTurn = true;
-    await this.assignPacks(game);
-
-    if (!Array.isArray(game.cards) || game.cards.length < CARD_LENGTH(game.players.length)) {
-      return {error: 'Не достаточно карт в папке с картами.'};
-    }
 
     this.dealCards(game);
+
     socketio.toPlayers(gameId).emit('game-started', 'game-started');
     socketio.toPlayers(gameId).emit('turn-change', game.players[playersTurn].name);
 
@@ -337,5 +338,49 @@ export default class Game {
       return {error: {message: `player does not exist in this game.`, code: 404}};
     }
     return player;
+  }
+
+  /**
+  * Ход
+  * @param {string} playerName - gameId
+  * @param {string} gameId - playerName
+  * @param {object} body - body
+  * @param {object} socketio - socketio
+  * @return {object}
+  */
+  turn(playerName, gameId, body = {}, socketio) {
+    const {game, player} = this.getGameAndPlayer(gameId, playerName);
+    const {cadrFromPlayer, riddle} = body; // TODO
+    if (game.error) {
+      return game.error;
+    }
+    if (game.gameOver) {
+      return {error: {message: `game is over.`, code: 400}};
+    }
+    if (!game.started) {
+      return {error: {message: `game does not started.`, code: 400}};
+    }
+    if (!game.roundStarted) {
+      return {error: {message: `round does not started.`, code: 400}};
+    }
+    if (player.error) {
+      return player.error;
+    }
+    if (!player.myTurn) {
+      return {error: {message: `this is not your turn.`, code: 400}};
+    }
+    if (!cadrFromPlayer) {
+      return {error: {message: `field cadrFromPlayer required.`, code: 400}};
+    }
+    if (!riddle) {
+      return {error: {message: `field riddle required.`, code: 400}};
+    }
+
+    game.drawPile = [...game.drawPile, {...cadrFromPlayer, hidden: true}]; // TODO
+    game.riddle = riddle;
+    game.voting = true;
+    socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} сделал ход.`);
+    socketio.toHost(gameId).emit(SocketEvents.gameState, game);
+    return {message: 'turn is done'};
   }
 }

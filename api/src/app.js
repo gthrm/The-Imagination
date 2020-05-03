@@ -112,6 +112,11 @@ app.get('/cards/:playerName/:gameId', (req, res) => {
   res.send(cards);
 });
 
+app.post('/turn/:playerName/:gameId', checkToken, (req, res) => {
+  const message = game.turn(req.params.playerName, req.params.gameId, req.body, socketio);
+  res.send(message);
+});
+
 app.get('/items', checkToken, (req, res) =>
   db.listItems(req.query.page, req.query.expiried)
       .then((data) => res.send(data))
@@ -156,5 +161,5 @@ socketio.on('connection', (socket) => {
 });
 
 server.listen(port, function() {
-  console.log(`Express server listening on port ${port}`);
+  console.log(`Express server listening on port ${port}, open chrome://inspect to debug`);
 });

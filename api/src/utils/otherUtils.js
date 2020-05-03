@@ -118,4 +118,5 @@ export const SocketEvents = {
   turnChange: 'turn-change',
   showMessage: 'show-message',
   gameState: 'game-state',
+  newTurn: 'new-turn',
 };
