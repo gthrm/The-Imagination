@@ -75,6 +75,9 @@ app.get('/game/:gameId', checkToken, (req, res) => {
 
 app.post('/game', checkToken, (req, res) => {
   const gameData = game.createGame();
+  if (gameData.error) {
+    res.status(gameData.error.code || 500);
+  }
   res.send(gameData);
 });
 
@@ -87,11 +90,11 @@ app.put('/game/:gameId', checkToken, async (req, res) => {
 });
 
 app.post('/test/:gameId', checkToken, checkToken, async (req, res) => {
-  const cards = await game.dealCards();
+  const cards = await game.assignPacks(req.params.gameId);
   console.log('--- cards', cards);
 
-  const startgame = game.test(req.params.gameId, socketio);
-  res.send(startgame);
+  // const startgame = game.test(req.params.gameId, socketio);
+  res.send(cards);
 });
 
 app.get('/player/:playerName/:gameId', checkToken, (req, res) => {
@@ -104,16 +107,25 @@ app.get('/player/:playerName/:gameId', checkToken, (req, res) => {
 
 app.post('/player/:playerName/:gameId', checkToken, (req, res) => {
   const message = game.playerJoins(req.params.playerName, req.params.gameId, socketio);
+  if (message.error) {
+    res.status(message.error.code || 500);
+  }
   res.send(message);
 });
 
 app.get('/cards/:playerName/:gameId', (req, res) => {
   const cards = game.getPlayerCards(req.params.playerName, req.params.gameId);
+  if (cards.error) {
+    res.status(cards.error.code || 500);
+  }
   res.send(cards);
 });
 
 app.post('/turn/:playerName/:gameId', checkToken, (req, res) => {
   const message = game.turn(req.params.playerName, req.params.gameId, req.body, socketio);
+  if (message.error) {
+    res.status(message.error.code || 500);
+  }
   res.send(message);
 });
 
@@ -161,5 +173,5 @@ socketio.on('connection', (socket) => {
 });
 
 server.listen(port, function() {
-  console.log(`Express server listening on port ${port}, open chrome://inspect to debug`);
+  console.log(`Express server listening on port ${port}, open`, 'chrome://inspect', 'to debug');
 });

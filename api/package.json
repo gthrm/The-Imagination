@@ -18,6 +18,7 @@
     "docker-names": "^1.1.1",
     "express": "^4.16.4",
     "express-basic-auth": "^1.2.0",
+    "file-type": "^14.2.0",
     "helmet": "^3.22.0",
     "jsonwebtoken": "^8.5.1",
     "log-timestamp": "^0.3.0",

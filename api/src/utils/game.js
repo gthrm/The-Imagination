@@ -241,7 +241,7 @@ export default class Game {
   playerJoins(playerName, gameId, socketio) {
     const game = this.games.find((g) => g.gameId === gameId.toLowerCase());
     if (!game) {
-      return {error: {message: 'This game does not exist.', code: 400}};
+      return {error: {message: 'This game does not exist.', code: 404}};
     }
 
     const playerExists = game.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());

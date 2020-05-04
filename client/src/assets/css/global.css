@@ -1,3 +1,7 @@
+* {
+  outline: none;
+}
+
 body {
   --bg: #635499;
   --tbg: #cccccc;
@@ -60,6 +64,27 @@ a {
   color: #ff5500ce;
 } */
 
+.form-control {
+  width: 100%;
+  border-radius: 5px;
+  margin: 5px 0;
+  padding: 5px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: solid var(--textNormal) 2px;
+  color: var(--textNormal);
+  outline: none;
+}
+
+.is-invalid {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: solid var(--textLinkHover) 2px;
+}
+
+.invalid-feedback {
+  color: var(--textLinkHover);
+  margin: 0 0 5px 0;
+}
+
 .preloader {
   display: inline-block;
   position: relative;
@@ -94,6 +119,7 @@ a {
   top: -24px;
   border-radius: 50% 50% 0 0;
 }
+
 @keyframes preloader {
   0% {
     transform: scale(0.95);

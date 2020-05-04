@@ -12,6 +12,7 @@ import NotFound from './screens/404';
 import { signIn, loadingSelector } from './redux/ducks/auth';
 import Preloader from './components/preloader';
 import 'react-notifications-component/dist/theme.css';
+import '../public/favicon.ico';
 
 const App = () => {
   const loading = useSelector(loadingSelector);

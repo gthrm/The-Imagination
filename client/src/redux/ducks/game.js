@@ -42,8 +42,15 @@ export const FETCH_PLAYER_START = `${prefix}/FETCH_PLAYER_START`;
 export const FETCH_PLAYER_SUCCESS = `${prefix}/FETCH_PLAYER_SUCCESS`;
 export const FETCH_PLAYER_ERROR = `${prefix}/FETCH_PLAYER_ERROR`;
 
+export const SET_RIDDLE_REQUEST = `${prefix}/SET_RIDDLE_REQUEST`;
+export const SET_RIDDLE_START = `${prefix}/SET_RIDDLE_START`;
+export const SET_RIDDLE_SUCCESS = `${prefix}/SET_RIDDLE_SUCCESS`;
+export const SET_RIDDLE_ERROR = `${prefix}/SET_RIDDLE_ERROR`;
+
 export const GAME_UPDATED = `${prefix}/GAME_UPDATED`;
 export const GAME_RESTORED = `${prefix}/GAME_RESTORED`;
+
+export const SELECT_CARD = `${prefix}/SELECT_CARD`;
 
 export const REALTIME_GAME_STATUS_UPDATED = `${prefix}/REALTIME_GAME_STATUS_UPDATED`;
 export const REALTIME_TURN_CHANGED = `${prefix}/REALTIME_TURN_CHANGED`;
@@ -118,6 +125,11 @@ export default function reducer(state = new ReducerRecord(), action) {
         .set('yourCards', payload.yourCards)
         .set('error', null);
 
+    case SELECT_CARD:
+      return state
+        .set('player', {...state.player, cards: [...state.player?.cards?.map((card) => (card?.fileName === payload?.card?.fileName ? { ...card, selected: !payload?.card?.selected } : { ...card, selected: false }))]})
+        .set('error', null);
+
     case CREATE_GAME_ERROR:
     case START_GAME_ERROR:
     case JOIN_GAME_ERROR:
@@ -157,6 +169,16 @@ export const startGame = () => ({
 export const joinGame = ({ playerName, gameId }) => ({
   type: JOIN_GAME_REQUEST,
   payload: { playerName, gameId }
+});
+
+export const setRiddle = ({ riddle }) => ({
+  type: SET_RIDDLE_REQUEST,
+  payload: { riddle }
+});
+
+export const selectCard = ({ card }) => ({
+  type: SELECT_CARD,
+  payload: { card }
 });
 
 /**

@@ -9,6 +9,11 @@ export const getItemFromLocalStorage = (itemName) => isJsonString(localStorage.g
 
 export const clearStorage = () => localStorage.clear();
 
+export const clearStorageWithoutToken = () => {
+  const auth = getItemFromLocalStorage('auth');
+  clearStorage();
+  setItemToLocalStorage('auth', auth);
+};
 
 export const isJsonString = (str) => {
   try {

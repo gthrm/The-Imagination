@@ -13,7 +13,7 @@ import {
   removeTokenFromLocalStorage
 } from '../../utils/tokenManagement';
 
-import { clearStorage } from '../../utils/localStorangeManagement';
+import { clearStorage, clearStorageWithoutToken } from '../../utils/localStorangeManagement';
 import refreshPage from '../../utils/refreshPage';
 import erorAlert, { getAlert } from '../../utils/erorAlert';
 import apiService from '../../utils/API';
@@ -103,17 +103,20 @@ export const refreshTokenSaga = function* ({ payload }) {
   }
 };
 
+// eslint-disable-next-line no-unused-vars
 export const errorSaga = function* ({ error, payload }) {
   yield put({
     type: ERROR_START
   });
   if (error?.response?.status) {
     switch (true) {
-      case (error.response.status === 401 && error.response.data.msg === 'Token has expired') || (error.response.status === 401 && error.response.data.message === 'Token has expired'):
-        yield put({
-          type: REFRESH_TOKEN_REQUEST,
-          payload
-        });
+      case (error.response.status === 401 && error.response.data.message === 'Token is not valid') || (error.response.status === 401 && error.response.data.message === 'Auth token is not supplied'):
+        yield call(getAlert, 'Ваш токен истек', 'Войдите в систему заново', refreshPage);
+        yield call(clearStorage);
+        // yield put({
+        //   type: REFRESH_TOKEN_REQUEST,
+        //   payload
+        // });
         break;
 
       case (error.response.status === 401 && error.response.data.msg === 'Token has been revoked') || (error.response.status === 404 && error.response.data.message === 'User not found') || (error.response.status === 401 && error.response.data.message === 'Account not found'):
@@ -124,16 +127,10 @@ export const errorSaga = function* ({ error, payload }) {
         yield call(removeTokenFromLocalStorage);
         break;
 
-      case error.response.status === 400 && error.response.data.message === 'Date range is being overflowed by existing booking':
-        yield call(getAlert, 'Ошибка', 'Выбранное вами время уже занято');
-        yield put({
-          type: ERROR_SUCCESS,
-          error
-        });
-        break;
-
       case error.response.status === 404 && error.response.data.error.message === 'Game does not exist':
-        yield call(getAlert, 'Ошибка', 'Игра не существует или уже завершилась, создайте новую игру');
+      case error.response.status === 404 && error.response.data.error.message === 'This game does not exist.':
+        yield call(getAlert, 'Игра не существует или уже завершилась', 'Создайте новую игру', refreshPage);
+        yield call(clearStorageWithoutToken);
         yield put({
           type: ERROR_SUCCESS,
           error
@@ -141,7 +138,23 @@ export const errorSaga = function* ({ error, payload }) {
         break;
 
       case error.response.status === 400 && error.response.data.error.message === 'This game has too many players, please join a different game.':
-        yield call(getAlert, 'Ошибка', 'В игре максимальное количество человек, присоеденитесь к другой игре');
+        yield call(getAlert, 'В игре максимальное количество человек, присоеденитесь к другой игре', 'Присоеденитесь к другой игре');
+        yield put({
+          type: ERROR_SUCCESS,
+          error
+        });
+        break;
+
+      case error.response.status === 400 && error.response.data.error.message === 'This playerName already exist.':
+        yield call(getAlert, 'Игрок с таким имененм уже существует', 'Задайте другое имя');
+        yield put({
+          type: ERROR_SUCCESS,
+          error
+        });
+        break;
+
+      case error.response.status === 400 && error.response.data.error.message === 'not enough cards in the card folder.':
+        yield call(getAlert, 'Не достаточно карт для игры', 'Добавьте карты в папку с картами');
         yield put({
           type: ERROR_SUCCESS,
           error
@@ -149,7 +162,15 @@ export const errorSaga = function* ({ error, payload }) {
         break;
 
       case error.response.status === 400 && error.response.data.error.message === 'This round has already started.':
-        yield call(getAlert, 'Ошибка', 'Этот раунд уже начат');
+        yield call(getAlert, 'Этот раунд уже начат', 'Присоеденитесь к другой игре');
+        yield put({
+          type: ERROR_SUCCESS,
+          error
+        });
+        break;
+
+      case error.response.status === 400 && error.response.data.error.message === 'A game needs at least two players.':
+        yield call(getAlert, 'В игре не достаточно игроков', 'Необходимо минимум двое');
         yield put({
           type: ERROR_SUCCESS,
           error
@@ -158,35 +179,8 @@ export const errorSaga = function* ({ error, payload }) {
 
       case error.response.status === 404 && error.response.data.error.message === 'player does not exist in this game.':
       case error.response.status === 404 && error.response.data.error.message === 'game does not exist.':
-        yield call(getAlert, 'Ошибка', 'Игра или игрок с таким именем не найден', refreshPage);
-        yield call(clearStorage);
-        yield put({
-          type: ERROR_SUCCESS,
-          error
-        });
-
-        break;
-
-      case error.response.status === 400 && error.response.data.message === 'No suitable tables found':
-        yield call(getAlert, 'Ошибка', 'Нет свободных мест на выбранную вами дату и время');
-        yield put({
-          type: ERROR_SUCCESS,
-          error
-        });
-        break;
-
-      case error.response.status === 403 && error.response.data.message === 'Email is not confirmed':
-        // eslint-disable-next-line no-useless-escape
-        yield call(getAlert, 'Ошибка', 'Ваш аккаунт не подтвержден.');
-        yield put({
-          type: ERROR_SUCCESS,
-          error
-        });
-        break;
-
-      case error.response.status === 403 && error.response.data.message === "Can't create booking in the past":
-        // eslint-disable-next-line no-useless-escape
-        yield call(getAlert, 'Ошибка', 'Нельзя забронировать в прошлом ¯\_(ツ)_/¯');
+        yield call(getAlert, 'Игра или игрок с таким именем не найден', '', refreshPage);
+        yield call(clearStorageWithoutToken);
         yield put({
           type: ERROR_SUCCESS,
           error
@@ -195,6 +189,9 @@ export const errorSaga = function* ({ error, payload }) {
 
       default:
         yield call(erorAlert, error);
+        // yield call(clearStorage);
+        // yield call(refreshPage);
+
         yield put({
           type: ERROR_SUCCESS,
           error

@@ -11,6 +11,7 @@ import Layout from '../components/layout';
 import useActions from '../hooks/useActions';
 import {
   joinGame,
+  selectCard,
   joinDataSelector,
   playerSelector,
   turnSelector,
@@ -19,7 +20,7 @@ import {
 import PlayerGameComponent from '../components/PlayerGameComponent';
 
 export default function JoinGame() {
-  const [joinGameApi] = useActions([joinGame]);
+  const [joinGameApi, selectCardApi] = useActions([joinGame, selectCard]);
   const joinData = useSelector(joinDataSelector);
   const player = useSelector(playerSelector);
   const me = useSelector(youSelector);
@@ -27,7 +28,12 @@ export default function JoinGame() {
 
   return (
     <Layout>
-      <PlayerGameComponent me={me} turn={turn} player={player} />
+      <PlayerGameComponent
+        me={me}
+        turn={turn}
+        player={player}
+        selectCardApi={selectCardApi}
+      />
       {!joinData?.message && (
         <Formik
           initialValues={{
@@ -44,20 +50,20 @@ export default function JoinGame() {
           })}
           onSubmit={(fields) => joinGameApi(fields)}
         >
-          {({ errors, status, touched }) => (
+          {({ errors, touched }) => (
             <Form>
               <div>
                 <div>
                   <p>Введи свое имя</p>
-                  <Field name="playerName" type="text" />
-                  <ErrorMessage name="playerName" component="div" />
+                  <Field name="playerName" className={`form-control${errors.password && touched.password ? ' is-invalid' : ''}`} type="text" />
+                  <ErrorMessage name="playerName" className="invalid-feedback" component="div" />
                 </div>
               </div>
               <div>
                 <div>
                   <p>Введи имя игры</p>
                   <Field name="gameId" type="text" className={`form-control${errors.password && touched.password ? ' is-invalid' : ''}`} />
-                  <ErrorMessage name="gameId" component="div" />
+                  <ErrorMessage name="gameId" className="invalid-feedback" component="div" />
                 </div>
               </div>
               <div>

@@ -27,7 +27,7 @@ export default (value) => {
         getAlert('Упс!', 'Что-то пошло не так. Повторите попытку позднее.');
         break;
       case value.response.status === 400:
-        getAlert('Bad request', 'Ошибка сервера. Повторите попытку позднее.');
+        getAlert('Bad request', value?.response?.data?.error?.message || 'Ошибка сервера. Повторите попытку позднее.');
         break;
       case value.response.status === undefined:
         getAlert('Проверьте подключение к сети!', '');

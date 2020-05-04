@@ -54,13 +54,13 @@ export default function Auth() {
         })}
         onSubmit={(fields) => login(fields)}
       >
-        {({ errors, status, touched }) => (
+        {({ errors, touched }) => (
           <Form>
             <div>
               <div className="form-group col-5">
                 <label htmlFor="login">Login</label>
-                <Field name="login" type="text" />
-                <ErrorMessage name="login" component="div" />
+                <Field name="login" type="text" className={`form-control${errors.password && touched.password ? ' is-invalid' : ''}`} />
+                <ErrorMessage name="login" className="invalid-feedback" component="div" />
               </div>
             </div>
             <div className="form-row">

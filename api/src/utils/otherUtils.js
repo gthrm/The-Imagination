@@ -2,6 +2,7 @@ import myAsyncAuthorizer from './BasicAuthorizer';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
+import FileType from 'file-type';
 import {secret} from '../../etc/config.json';
 
 export const CARD_LENGTH = (playersLength) => playersLength * STARTING_HAND;
@@ -85,9 +86,16 @@ export class HandlerGenerator {
  * @return {object}
  */
 export async function readDir(dirnameExportImg = '../../assets/cards') {
-  const files = await fs.readdirSync(path.join(__dirname, dirnameExportImg));
-  const cardsData = files.map(
-      (file) => ({fileName: file, path: `/upload/${file}`}),
+  const pathcards = path.join(__dirname, dirnameExportImg);
+  const files = await fs.readdirSync(pathcards);
+  const filesList = files.map(async (file) => ({
+    file,
+    type: await getFileType(file, pathcards),
+  }));
+  const imgFiles = await Promise.all(filesList);
+
+  const cardsData = imgFiles.filter((file)=>file.type.isImg).map(
+      (file) => ({fileName: file.file, path: `/upload/${file.file}`}),
   );
   return shuffle(cardsData);
 }
@@ -109,6 +117,27 @@ export function shuffle(deck) {
     }
   }
   return shuffleDeck;
+}
+
+/**
+* Определить тип файла
+* @param {string} file - file
+* @param {string} pathcards - pathcards
+* @return {object}
+*/
+export async function getFileType(file, pathcards) {
+  if (file) {
+    try {
+      const pathToFile = pathcards + '/' + file;
+      const fileType = await FileType.fromFile(pathToFile);
+      const fileTypeData = {...fileType, isImg: !!fileType.mime.includes('image')};
+      return fileTypeData;
+    } catch (error) {
+      console.log('error', error);
+      return {};
+    }
+  }
+  return {};
 }
 
 export const SocketEvents = {
