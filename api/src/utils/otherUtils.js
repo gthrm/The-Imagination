@@ -133,7 +133,7 @@ export async function getFileType(file, pathcards) {
       const fileTypeData = {...fileType, isImg: !!fileType.mime.includes('image')};
       return fileTypeData;
     } catch (error) {
-      console.log('error', error);
+      // console.log('error', error);
       return {};
     }
   }
@@ -147,5 +147,6 @@ export const SocketEvents = {
   turnChange: 'turn-change',
   showMessage: 'show-message',
   gameState: 'game-state',
+  playerState: 'player-state',
   newTurn: 'new-turn',
 };

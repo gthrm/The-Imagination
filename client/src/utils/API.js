@@ -12,6 +12,8 @@ export const SocketEvents = {
   turnChange: 'turn-change',
   showMessage: 'show-message',
   gameState: 'game-state',
+  playerState: 'player-state',
+  newTurn: 'new-turn',
 };
 
 const HOST = config.backend_url;

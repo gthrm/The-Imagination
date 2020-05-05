@@ -45,7 +45,7 @@ const socketio = io(server);
 app.post('/auth', handlers.login);
 
 app.get('/upload/:id', (req, res) => {
-  console.log(req.params.id);
+  // console.log(req.params.id);
   res.sendFile(path.join(__dirname, `../assets/cards/${req.params.id}`));
 });
 
@@ -56,7 +56,7 @@ app.get('/users', (req, res) => {
 app.post('/user', checkToken, (req, res) => {
   db.createUser(req.body)
       .then((data) => {
-        console.log('post user ', data);
+        // console.log('post user ', data);
         if (data.error) {
           res.status(data.error.code || 500);
         }
@@ -91,7 +91,7 @@ app.put('/game/:gameId', checkToken, async (req, res) => {
 
 app.post('/test/:gameId', checkToken, checkToken, async (req, res) => {
   const cards = await game.assignPacks(req.params.gameId);
-  console.log('--- cards', cards);
+  // console.log('--- cards', cards);
 
   // const startgame = game.test(req.params.gameId, socketio);
   res.send(cards);
@@ -123,6 +123,14 @@ app.get('/cards/:playerName/:gameId', (req, res) => {
 
 app.post('/turn/:playerName/:gameId', checkToken, (req, res) => {
   const message = game.turn(req.params.playerName, req.params.gameId, req.body, socketio);
+  if (message.error) {
+    res.status(message.error.code || 500);
+  }
+  res.send(message);
+});
+
+app.post('/throwcard/:playerName/:gameId', checkToken, (req, res) => {
+  const message = game.throwcard(req.params.playerName, req.params.gameId, req.body, socketio);
   if (message.error) {
     res.status(message.error.code || 500);
   }

@@ -55,6 +55,7 @@ export const SELECT_CARD = `${prefix}/SELECT_CARD`;
 export const REALTIME_GAME_STATUS_UPDATED = `${prefix}/REALTIME_GAME_STATUS_UPDATED`;
 export const REALTIME_TURN_CHANGED = `${prefix}/REALTIME_TURN_CHANGED`;
 export const REALTIME_SHOW_MESSAGE = `${prefix}/REALTIME_SHOW_MESSAGE`;
+export const REALTIME_SET_GAME_STATE = `${prefix}/REALTIME_SET_GAME_STATE`;
 
 export const FETCH_CARD_SUCCESS = `${prefix}/FETCH_CARD_SUCCESS`;
 
@@ -87,6 +88,7 @@ export default function reducer(state = new ReducerRecord(), action) {
     case CREATE_GAME_SUCCESS:
     case START_GAME_SUCCESS:
     case GAME_RESTORED_SUCCESS:
+    case REALTIME_SET_GAME_STATE:
       return state
         .set('loading', false)
         .set('error', null)
@@ -127,7 +129,15 @@ export default function reducer(state = new ReducerRecord(), action) {
 
     case SELECT_CARD:
       return state
-        .set('player', {...state.player, cards: [...state.player?.cards?.map((card) => (card?.fileName === payload?.card?.fileName ? { ...card, selected: !payload?.card?.selected } : { ...card, selected: false }))]})
+        .set('player', {
+          ...state.player,
+          cards: [
+            ...state.player?.cards?.map(
+              (card) => (card?.fileName === payload?.card?.fileName
+                ? { ...card, selected: !payload?.card?.selected }
+                : { ...card, selected: false }))
+          ]
+        })
         .set('error', null);
 
     case CREATE_GAME_ERROR:
@@ -319,6 +329,46 @@ export const restoredGameSaga = function* ({ payload }) {
   }
 };
 
+export const setRiddleSaga = function* ({ payload }) {
+  yield put({
+    type: SET_RIDDLE_START
+  });
+  const player = yield select(playerSelector);
+  const you = yield select(youSelector);
+
+  const selectedCard = player.cards.filter((card) => card.selected)[0];
+  const playerName = player.name;
+  const { gameId } = you;
+  if (selectedCard && payload.riddle) {
+    try {
+      const gameStatusMessage = yield call(apiService.post, {
+        url: `/turn/${playerName}/${gameId}`,
+        body: {
+          cadrFromPlayer: selectedCard,
+          riddle: payload.riddle
+        },
+        header: null
+      });
+      console.log('gameStatusMessage', gameStatusMessage);
+
+      yield put({
+        type: SET_RIDDLE_SUCCESS,
+        payload: { gameStatusMessage }
+      });
+    } catch (error) {
+      yield put({
+        type: SET_RIDDLE_ERROR,
+        payload: { saga: setRiddleSaga, sagaPayload: payload },
+        error
+      });
+    }
+  }
+};
+
+/**
+   * Realtime Sagas
+   * */
+
 const createGameStartedEventChannel = () => {
   const subscribe = (emitter) => {
     socket.on(SocketEvents.gameStarted, (data) => emitter({ data }));
@@ -378,6 +428,31 @@ export const turnChangeRealtimeSyncSaga = function* () {
   }
 };
 
+const updatePlayerStateEventChannel = () => {
+  const subscribe = (emitter) => {
+    socket.on(SocketEvents.playerState, (data) => emitter({ data }));
+    return () => socket.removeListener(SocketEvents.playerState, emitter);
+  };
+  return eventChannel(subscribe);
+};
+
+export const updatePlayerStateRealtimeSyncSaga = function* () {
+  const chanel = yield call(updatePlayerStateEventChannel);
+  while (true) {
+    const playerState = yield take(chanel);
+    if (playerState) {
+      const you = yield select(youSelector);
+      if (you) {
+        const { playerName, gameId } = you;
+        yield put({
+          type: FETCH_PLAYER_REQUEST,
+          payload: { playerName, gameId }
+        });
+      }
+    }
+  }
+};
+
 const showMessageEventChannel = () => {
   const subscribe = (emitter) => {
     socket.on(SocketEvents.showMessage, (data) => emitter({ data }));
@@ -400,6 +475,25 @@ export const showMessageRealtimeSyncSaga = function* () {
   }
 };
 
+const setGameStateEventChannel = () => {
+  const subscribe = (emitter) => {
+    socket.on(SocketEvents.gameState, (data) => emitter({ data }));
+    return () => socket.removeListener(SocketEvents.gameState, emitter);
+  };
+  return eventChannel(subscribe);
+};
+
+export const setGameStateRealtimeSyncSaga = function* () {
+  const chanel = yield call(setGameStateEventChannel);
+  while (true) {
+    const newGameState = yield take(chanel);
+    yield put({
+      type: REALTIME_SET_GAME_STATE,
+      payload: { game: newGameState?.data }
+    });
+  }
+};
+
 export function* saga() {
   yield all([
     takeLatest(START_GAME_ERROR, errorSaga),
@@ -407,13 +501,17 @@ export function* saga() {
     takeLatest(JOIN_GAME_ERROR, errorSaga),
     takeLatest(GAME_RESTORED_ERROR, errorSaga),
     takeLatest(FETCH_PLAYER_ERROR, errorSaga),
+    takeLatest(SET_RIDDLE_ERROR, errorSaga),
     takeLatest(START_GAME_REQUEST, startGameSaga),
     takeLatest(FETCH_PLAYER_REQUEST, fetchPlayerSaga),
     takeLatest(GAME_RESTORED_REQUEST, restoredGameSaga),
     takeLatest(CREATE_GAME_REQUEST, createGameSaga),
+    takeLatest(SET_RIDDLE_REQUEST, setRiddleSaga),
     takeLatest(JOIN_GAME_REQUEST, joinGameSaga)
   ]);
   yield fork(gameStartedRealtimeSyncSaga);
   yield fork(turnChangeRealtimeSyncSaga);
   yield fork(showMessageRealtimeSyncSaga);
+  yield fork(setGameStateRealtimeSyncSaga);
+  yield fork(updatePlayerStateRealtimeSyncSaga);
 }

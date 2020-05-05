@@ -41,7 +41,7 @@ export default class Game {
         player = {id, name, color: this.getColor()};
         this.players.push(player);
       }
-      console.log('player', player);
+      // console.log('player', player);
 
       return player;
     }
@@ -195,12 +195,7 @@ export default class Game {
     for (let i = 0; i < STARTING_HAND; i++) {
       for (const player of game.players) {
         const newCard = this.drawCard(game.cards);
-        if (newCard.value === '3' && newCard.colour === 'red') {
-          player.redThrees.push(newCard);
-          player.extraFirstTurn++;
-        } else {
-          player.cards.push(newCard);
-        }
+        player.cards.push(newCard);
       }
     }
   }
@@ -227,7 +222,8 @@ export default class Game {
       player.cards = [];
       player.meld = {};
       player.myTurn = false;
-      player.hasDrawn = false;
+      player.hasVoting = false;
+      player.hasThrowCard = false;
     }
   };
 
@@ -261,8 +257,9 @@ export default class Game {
       cards: [],
       points: 0,
       myTurn: false,
-      hasDrawn: false,
-      extraFirstTurn: 0,
+      hasThrowCard: false,
+      hasVoting: false,
+      // extraFirstTurn: 0,
     };
     game.players.push(player);
 
@@ -349,10 +346,10 @@ export default class Game {
   * @return {object}
   */
   turn(playerName, gameId, body = {}, socketio) {
-    const {game, player} = this.getGameAndPlayer(gameId, playerName);
-    const {cadrFromPlayer, riddle} = body; // TODO
-    if (game.error) {
-      return game.error;
+    const {game, player, error} = this.getGameAndPlayer(gameId, playerName);
+    const {riddle} = body; // TODO
+    if (error) {
+      return error;
     }
     if (game.gameOver) {
       return {error: {message: `game is over.`, code: 400}};
@@ -363,24 +360,160 @@ export default class Game {
     if (!game.roundStarted) {
       return {error: {message: `round does not started.`, code: 400}};
     }
-    if (player.error) {
-      return player.error;
-    }
     if (!player.myTurn) {
       return {error: {message: `this is not your turn.`, code: 400}};
     }
-    if (!cadrFromPlayer) {
-      return {error: {message: `field cadrFromPlayer required.`, code: 400}};
-    }
+    // if (!cadrFromPlayer) {
+    //   return {error: {message: `field cadrFromPlayer required.`, code: 400}};
+    // }
     if (!riddle) {
       return {error: {message: `field riddle required.`, code: 400}};
     }
 
-    game.drawPile = [...game.drawPile, {...cadrFromPlayer, hidden: true}]; // TODO
+    player.hasThrowCard = true;
+    const throwcardData = this.throwcard(playerName, gameId, body, null, true);
+    console.log('--- throwcardData', throwcardData);
+
+    // const indexOfchosenCard = player.cards.findIndex((card) => card.fileName === cadrFromPlayer.fileName);
+    // if (indexOfchosenCard === -1) {
+    //   return {error: {message: 'card not found', code: 400}};
+    // }
+    // const selectedCard = player.cards.splice(indexOfchosenCard, 1);
+    // game.drawPile = [...game.drawPile, {...selectedCard, hidden: true}]; // TODO
+
+    // const newPlayersState = game.players.map((player) =>
+    //   player.name === playerName ?
+    //     {...player, hasThrowCard: false} :
+    //     {...player, hasThrowCard: true},
+    // );
+
+    // game.players = newPlayersState;
+    if (throwcardData.error) {
+      return throwcardData;
+    }
+    player.myTurn = false;
+    console.log('--- player', player);
+
     game.riddle = riddle;
-    game.voting = true;
+
+    const newPlayersState = game.players.map((player) =>
+    player.name === playerName ?
+      {...player, hasThrowCard: false} :
+      {...player, hasThrowCard: true},
+    );
+    game.players = newPlayersState;
+
     socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} сделал ход.`);
     socketio.toHost(gameId).emit(SocketEvents.gameState, game);
+    socketio.toPlayers(gameId).emit(SocketEvents.playerState, 'update');
+    socketio.toPlayers(gameId).emit(SocketEvents.showMessage, 'Добавьте карту на стол!');
     return {message: 'turn is done'};
+  }
+
+  /**
+  * throwcard
+  * @param {string} playerName - gameId
+  * @param {string} gameId - playerName
+  * @param {object} body - body
+  * @param {object} socketio - socketio
+  * @param {boolean} isTurn - isTurn
+  * @return {object}
+  */
+  throwcard(playerName, gameId, body = {}, socketio, isTurn = false) {
+    const {game, player, error} = this.getGameAndPlayer(gameId, playerName);
+    const {cadrFromPlayer} = body; // TODO
+    if (error) {
+      return error;
+    }
+    if (game.gameOver) {
+      return {error: {message: `game is over.`, code: 400}};
+    }
+    if (!game.started) {
+      return {error: {message: `game does not started.`, code: 400}};
+    }
+    if (!game.roundStarted) {
+      return {error: {message: `round does not started.`, code: 400}};
+    }
+    if (!player.hasThrowCard) {
+      return {error: {message: `you cannot trow card`, code: 400}};
+    }
+    if (!cadrFromPlayer) {
+      return {error: {message: `field cadrFromPlayer required.`, code: 400}};
+    }
+    const indexOfchosenCard = player.cards.findIndex((card) => card.fileName === cadrFromPlayer.fileName);
+    console.log('---- indexOfchosenCard', indexOfchosenCard);
+
+    if (indexOfchosenCard === -1) {
+      return {error: {message: 'card not found', code: 404}};
+    }
+    const selectedCard = player.cards.splice(indexOfchosenCard, 1);
+    console.log('--- selectedCard', selectedCard[0]);
+
+
+    game.drawPile = [...game.drawPile, {...selectedCard[0], hidden: true, playerName, isTurn}]; // TODO
+    player.hasThrowCard = false;
+
+
+    if (!isTurn && game.drawPile.length === game.players.length) {
+      const {playerName, error} = this.getLastPlayer(game);
+      if (error) return error;
+      const newPlayersState = game.players.map(
+          (player)=>player.name === playerName ?
+        {...player, hasVoting: false} :
+        {...player, hasVoting: true},
+      );
+      console.log('--- newPlayersState', newPlayersState);
+      game.players = newPlayersState;
+    }
+
+    if (socketio) {
+      socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} добавил карту.`);
+      socketio.toHost(gameId).emit(SocketEvents.gameState, game);
+      socketio.toPlayers(gameId).emit(SocketEvents.playerState, 'update');
+    }
+    return {message: 'throw card is done'};
+  }
+
+
+  // если голосование завершилось
+  // const nextTurnPlayer = this.getNextTurnPlayer(game);
+  // if (nextTurnPlayer.error) return nextTurnPlayer;
+  // nextTurnPlayer.myTurn = true;
+  // game.discardPile = [...game.discardPile, ...game.drawPile];
+  // game.drawPile = [];
+
+  /**
+  * getLastPlayer
+  * @param {object} game - game
+  * @return {string}
+  */
+  getLastPlayer(game) {
+    const lastPlayerCard = game.drawPile.find((card)=>card.isTurn);
+    if (!lastPlayerCard) {
+      return {error: {message: 'lastPlayerCard not found', code: 404}};
+    }
+    const {playerName} = lastPlayerCard;
+    console.log('--- getLastPlayer', playerName);
+    return {playerName};
+  }
+
+  /**
+  * getNextTurn
+  * @param {object} game - game
+  * @return {object}
+  */
+  getNextTurnPlayer(game) {
+    const {playerName, error} = this.getLastPlayer(game);
+    if (error) {
+      return error;
+    }
+
+    const lastPlayerIndex = game.players.findIndex((player)=> player.name === playerName);
+    if (lastPlayerIndex === -1) {
+      return {error: {message: 'lastPlayerIndex not found', code: 404}};
+    }
+
+    if (lastPlayerIndex === game.players.length - 1) return game.players[0];
+    return game.players[lastPlayerIndex];
   }
 }
