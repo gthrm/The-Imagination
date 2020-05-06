@@ -95,13 +95,13 @@ export default class Game {
   * Создание игры
   * @return {object}
   */
-  createGame() {
+  async createGame() {
     // this.createTurnCells();
     this.createColors();
     const newGameId = this.getName();
     const gameState = {
       gameId: newGameId,
-      // turnCells: this.turnCells,
+      userImages: [],
       roundStarted: false,
       gameOver: false,
       drawPile: [],
@@ -116,7 +116,9 @@ export default class Game {
       started: false,
       createdAt: new Date(),
     };
+    await this.assignPlayerPic(gameState);
     this.games.push(gameState);
+
     return gameState;
   }
 
@@ -259,8 +261,11 @@ export default class Game {
       myTurn: false,
       hasThrowCard: false,
       hasVoting: false,
-      // extraFirstTurn: 0,
+      image: null,
     };
+    const randomIndex = Math.floor(Math.random() * game.userImages);
+    const chosenImage = game.userImages.splice(randomIndex, 1);
+    player.image = chosenImage;
     game.players.push(player);
 
     socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} has joined the game.`);
@@ -276,6 +281,19 @@ export default class Game {
     try {
       const cards = await readDir();
       game.cards = cards;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  /**
+  * Создает картинки игроков
+  * @param {object} game - game
+  */
+  async assignPlayerPic(game) {
+    try {
+      const userImages = await readDir('../../assets/images', 'playerpic');
+      game.userImages = userImages;
     } catch (error) {
       console.error(error);
     }

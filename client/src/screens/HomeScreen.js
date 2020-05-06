@@ -6,10 +6,12 @@ import Layout from '../components/layout';
 import useActions from '../hooks/useActions';
 import { createGame, startGame, gameSelector } from '../redux/ducks/game';
 import Button from '../components/button';
+import Players from '../components/Players';
 
 export default function HomeScreen() {
   const history = useHistory();
   const game = useSelector(gameSelector);
+  const players = game?.players;
   const [createGameApi, startGameApi] = useActions([createGame, startGame]);
   const createGameHandler = () => createGameApi();
   const startGameHandler = () => startGameApi();
@@ -23,27 +25,40 @@ export default function HomeScreen() {
         css={css`
               flex-direction: column;
               display: flex;
+              flex: 1;
+              justify-content: center;
+              align-items: center;
+            `}
+      >
+
+
+        <div
+          css={css`
+              flex-direction: column;
+              display: flex;
               background-color: #463973;
               border-radius: 5px;
             `}
-      >
-        <Button
-          onClick={gameIsCreated ? startGameHandler : createGameHandler}
-          title={gameIsCreated ? 'Начать игру' : 'Новая игра'}
-        />
-        {!gameIsCreated && (
+        >
           <Button
-            onClick={joinTheGame}
-            title="Присоедениться к игре"
+            onClick={gameIsCreated ? startGameHandler : createGameHandler}
+            title={gameIsCreated ? 'Начать игру' : 'Новая игра'}
           />
-        )}
+          {!gameIsCreated && (
+            <Button
+              onClick={joinTheGame}
+              title="Присоедениться к игре"
+            />
+          )}
+        </div>
+        <div>
+          {!!game?.gameId && <p>{`🎮 - ${game?.gameId}`}</p>}
+        </div>
+        <div>
+          {!!game?.error && `Ошибка: ${game?.error}`}
+        </div>
       </div>
-      <div>
-        {!!game?.gameId && <p>{`🎮 - ${game?.gameId}`}</p>}
-      </div>
-      <div>
-        {!!game?.error && `Ошибка: ${game?.error}`}
-      </div>
+      <Players players={players} />
     </Layout>
   );
 }

@@ -83,9 +83,10 @@ export class HandlerGenerator {
 /**
  * Читает карты из папки с картами
  * @param {string} dirnameExportImg - path
+ * @param {string} pathTitle - pathTitle
  * @return {object}
  */
-export async function readDir(dirnameExportImg = '../../assets/cards') {
+export async function readDir(dirnameExportImg = '../../assets/cards', pathTitle = 'upload') {
   const pathcards = path.join(__dirname, dirnameExportImg);
   const files = await fs.readdirSync(pathcards);
   const filesList = files.map(async (file) => ({
@@ -95,7 +96,7 @@ export async function readDir(dirnameExportImg = '../../assets/cards') {
   const imgFiles = await Promise.all(filesList);
 
   const cardsData = imgFiles.filter((file)=>file.type.isImg).map(
-      (file) => ({fileName: file.file, path: `/upload/${file.file}`}),
+      (file) => ({fileName: file.file, path: `/${pathTitle}/${file.file}`}),
   );
   return shuffle(cardsData);
 }

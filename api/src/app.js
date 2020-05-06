@@ -49,6 +49,11 @@ app.get('/upload/:id', (req, res) => {
   res.sendFile(path.join(__dirname, `../assets/cards/${req.params.id}`));
 });
 
+app.get('/playerpic/:id', (req, res) => {
+  // console.log(req.params.id);
+  res.sendFile(path.join(__dirname, `../assets/images/${req.params.id}`));
+});
+
 app.get('/users', (req, res) => {
   db.listUsers(req.query.page).then((data) => res.send(data)).catch((err) => res.send(err));
 });
@@ -73,8 +78,8 @@ app.get('/game/:gameId', checkToken, (req, res) => {
   res.send(findGame);
 });
 
-app.post('/game', checkToken, (req, res) => {
-  const gameData = game.createGame();
+app.post('/game', checkToken, async (req, res) => {
+  const gameData = await game.createGame();
   if (gameData.error) {
     res.status(gameData.error.code || 500);
   }

@@ -11,7 +11,7 @@ export default ({ children }) => (
         padding: 30px;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
         @media (max-width: 550px) {
           padding: 10px;
