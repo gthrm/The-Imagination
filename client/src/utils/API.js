@@ -20,6 +20,7 @@ const HOST = config.backend_url;
 
 const getConfig = (header) => {
   const token = getTokenFromLocalStorage();
+  console.log('--- token', token);
   if (!token) return {};
   const headers = { Authorization: `Bearer ${token}` };
   return header === 'auth' ? { headers } : { headers: { ...headers, 'Content-Type': 'application/json' } };

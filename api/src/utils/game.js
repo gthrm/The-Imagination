@@ -6,6 +6,7 @@ import {
   CARD_LENGTH,
   STARTING_HAND,
   SocketEvents,
+  shuffle,
 } from './otherUtils';
 /**
  * Класс Game
@@ -424,7 +425,7 @@ export default class Game {
     socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} сделал ход.`);
     socketio.toHost(gameId).emit(SocketEvents.gameState, game);
     socketio.toPlayers(gameId).emit(SocketEvents.playerState, 'update');
-    socketio.toPlayers(gameId).emit(SocketEvents.showMessage, 'Добавьте карту на стол!');
+    socketio.toHost(gameId).emit(SocketEvents.showMessage, 'Добавьте карту на стол!');
     return {message: 'turn is done'};
   }
 
@@ -480,14 +481,18 @@ export default class Game {
         {...player, hasVoting: false} :
         {...player, hasVoting: true},
       );
-      console.log('--- newPlayersState', newPlayersState);
+      const openCards = game.drawPile.map((card)=>({...card, hidden: false}));
+      console.log('--- newPlayersState', newPlayersState, '---openCards', openCards);
+      game.drawPile = shuffle(openCards);
       game.players = newPlayersState;
+      game.voting = true;
     }
 
     if (socketio) {
       socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} добавил карту.`);
       socketio.toHost(gameId).emit(SocketEvents.gameState, game);
       socketio.toPlayers(gameId).emit(SocketEvents.playerState, 'update');
+      socketio.toPlayers(gameId).emit(SocketEvents.showMessage, 'Голосование началось');
     }
     return {message: 'throw card is done'};
   }

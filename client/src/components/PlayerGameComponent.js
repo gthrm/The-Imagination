@@ -1,15 +1,17 @@
 /* eslint-disable no-nested-ternary */
 import React from 'react';
 import { css } from '@emotion/core';
-import Card from './Card';
+import Cards from './Cards';
 import Riddle from './Riddle';
+import Button from './button';
 
 export default function PlayerGameComponent(props) {
   const {
     player,
     turn,
     me,
-    selectCardApi
+    selectCardApi,
+    throwCardApi
   } = props;
   return (
     <div
@@ -53,25 +55,9 @@ export default function PlayerGameComponent(props) {
                 {player.myTurn ? 'Ваш ход' : (turn?.data ? `Ходит ${turn?.data}` : '')}
               </div>
             </div>
-            <div
-              css={css`
-                  display: flex;
-                  justify-content: space-between;
-                  flex-direction: row;
-                  flex-wrap: wrap;
-              `}
-            >
-              {Array.isArray(player?.cards) && player?.cards.map(
-                (card) => (
-                  <Card
-                    selectCardApi={selectCardApi}
-                    key={card.fileName}
-                    card={card}
-                  />
-                )
-              )}
-            </div>
+            <Cards cards={player?.cards} selectCardApi={selectCardApi} />
             {!!player.myTurn && <Riddle />}
+            {!!player.hasThrowCard && <Button title="Держи карту" onClick={throwCardApi} />}
           </>
         )}
 

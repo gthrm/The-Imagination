@@ -13,7 +13,7 @@ export default function Player(props) {
     <div
       css={css`
       width: ${player?.myTurn ? '90px' : '70px'};
-      height: ${player?.myTurn ? '120px' : '100px'};;
+      height: ${player?.myTurn ? '140px' : '120px'};
       border: ${player?.myTurn ? 'solid #98026099 3px' : 'solid var(--textLink) 0px'};
       background-color: #ffffff33;
       border-radius: 15px;
@@ -41,6 +41,16 @@ export default function Player(props) {
         `}
       >
         {`${player.name}`.toUpperCase()}
+      </p>
+      <p
+        css={css`
+          font-size: 14px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          overflow: hidden;
+        `}
+      >
+        {`${player.points}`}
       </p>
     </div>
   );

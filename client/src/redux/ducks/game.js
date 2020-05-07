@@ -47,6 +47,11 @@ export const SET_RIDDLE_START = `${prefix}/SET_RIDDLE_START`;
 export const SET_RIDDLE_SUCCESS = `${prefix}/SET_RIDDLE_SUCCESS`;
 export const SET_RIDDLE_ERROR = `${prefix}/SET_RIDDLE_ERROR`;
 
+export const THROW_CARD_REQUEST = `${prefix}/THROW_CARD_REQUEST`;
+export const THROW_CARD_START = `${prefix}/THROW_CARD_START`;
+export const THROW_CARD_SUCCESS = `${prefix}/THROW_CARD_SUCCESS`;
+export const THROW_CARD_ERROR = `${prefix}/THROW_CARD_ERROR`;
+
 export const GAME_UPDATED = `${prefix}/GAME_UPDATED`;
 export const GAME_RESTORED = `${prefix}/GAME_RESTORED`;
 
@@ -189,6 +194,10 @@ export const setRiddle = ({ riddle }) => ({
 export const selectCard = ({ card }) => ({
   type: SELECT_CARD,
   payload: { card }
+});
+
+export const throwCard = () => ({
+  type: THROW_CARD_REQUEST
 });
 
 /**
@@ -362,6 +371,45 @@ export const setRiddleSaga = function* ({ payload }) {
         error
       });
     }
+  } else {
+    console.log('Нужно выбрать карту');
+  }
+};
+
+export const throwCardSaga = function* ({ payload }) {
+  yield put({
+    type: THROW_CARD_START
+  });
+  const player = yield select(playerSelector);
+  const you = yield select(youSelector);
+
+  const selectedCard = player.cards.filter((card) => card.selected)[0];
+  const playerName = player.name;
+  const { gameId } = you;
+  if (selectedCard) {
+    try {
+      const gameStatusMessage = yield call(apiService.post, {
+        url: `/throwcard/${playerName}/${gameId}`,
+        body: {
+          cadrFromPlayer: selectedCard
+        },
+        header: null
+      });
+      console.log('gameStatusMessage', gameStatusMessage);
+
+      yield put({
+        type: THROW_CARD_SUCCESS,
+        payload: { gameStatusMessage }
+      });
+    } catch (error) {
+      yield put({
+        type: THROW_CARD_ERROR,
+        payload: { saga: throwCardSaga, sagaPayload: payload },
+        error
+      });
+    }
+  } else {
+    console.log('Нужно выбрать карту');
   }
 };
 
@@ -502,11 +550,13 @@ export function* saga() {
     takeLatest(GAME_RESTORED_ERROR, errorSaga),
     takeLatest(FETCH_PLAYER_ERROR, errorSaga),
     takeLatest(SET_RIDDLE_ERROR, errorSaga),
+    takeLatest(THROW_CARD_ERROR, errorSaga),
     takeLatest(START_GAME_REQUEST, startGameSaga),
     takeLatest(FETCH_PLAYER_REQUEST, fetchPlayerSaga),
     takeLatest(GAME_RESTORED_REQUEST, restoredGameSaga),
     takeLatest(CREATE_GAME_REQUEST, createGameSaga),
     takeLatest(SET_RIDDLE_REQUEST, setRiddleSaga),
+    takeLatest(THROW_CARD_REQUEST, throwCardSaga),
     takeLatest(JOIN_GAME_REQUEST, joinGameSaga)
   ]);
   yield fork(gameStartedRealtimeSyncSaga);

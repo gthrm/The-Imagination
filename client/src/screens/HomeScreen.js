@@ -7,6 +7,7 @@ import useActions from '../hooks/useActions';
 import { createGame, startGame, gameSelector } from '../redux/ducks/game';
 import Button from '../components/button';
 import Players from '../components/Players';
+import Cards from '../components/Cards';
 
 export default function HomeScreen() {
   const history = useHistory();
@@ -16,7 +17,10 @@ export default function HomeScreen() {
   const createGameHandler = () => createGameApi();
   const startGameHandler = () => startGameApi();
   const gameIsCreated = game;
-
+  const gameIsStarted = game?.started;
+  const drawPile = game?.drawPile;
+  const riddle = game?.riddle;
+  const votingIsStart = game?.voting;
   const joinTheGame = () => history.push('/joingame');
 
   return (
@@ -31,26 +35,46 @@ export default function HomeScreen() {
             `}
       >
 
-
-        <div
-          css={css`
+        {!gameIsStarted && (
+          <div
+            css={css`
               flex-direction: column;
               display: flex;
               background-color: #463973;
               border-radius: 5px;
             `}
-        >
-          <Button
-            onClick={gameIsCreated ? startGameHandler : createGameHandler}
-            title={gameIsCreated ? 'Начать игру' : 'Новая игра'}
-          />
-          {!gameIsCreated && (
+          >
             <Button
-              onClick={joinTheGame}
-              title="Присоедениться к игре"
+              onClick={gameIsCreated ? startGameHandler : createGameHandler}
+              title={gameIsCreated ? 'Начать игру' : 'Новая игра'}
             />
-          )}
-        </div>
+            {!gameIsCreated && (
+              <Button
+                onClick={joinTheGame}
+                title="Присоедениться к игре"
+              />
+            )}
+          </div>
+        )}
+        {drawPile?.length > 0 && (
+          <div
+            css={css`
+              flex-direction: column;
+              display: flex;
+            `}
+          >
+            <Cards cards={drawPile} votingIsStart={!!votingIsStart} />
+            <p
+              css={css`
+                font-size: 16px;
+                text-align: center;
+                margin 10px;
+              `}
+            >
+              {!!riddle && `Загадка: ${riddle}`.toUpperCase()}
+            </p>
+          </div>
+        )}
         <div>
           {!!game?.gameId && <p>{`🎮 - ${game?.gameId}`}</p>}
         </div>

@@ -15,12 +15,13 @@ import {
   joinDataSelector,
   playerSelector,
   turnSelector,
-  youSelector
+  youSelector,
+  throwCard
 } from '../redux/ducks/game';
 import PlayerGameComponent from '../components/PlayerGameComponent';
 
 export default function JoinGame() {
-  const [joinGameApi, selectCardApi] = useActions([joinGame, selectCard]);
+  const [joinGameApi, selectCardApi, throwCardApi] = useActions([joinGame, selectCard, throwCard]);
   const joinData = useSelector(joinDataSelector);
   const player = useSelector(playerSelector);
   const me = useSelector(youSelector);
@@ -35,6 +36,7 @@ export default function JoinGame() {
         turn={turn}
         player={player}
         selectCardApi={selectCardApi}
+        throwCardApi={throwCardApi}
       />
       )}
       {!joinData?.message && (

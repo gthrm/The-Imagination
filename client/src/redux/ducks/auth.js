@@ -207,7 +207,7 @@ export const singInSaga = function* () {
     });
     return;
   }
-
+  yield call(setTokenToLocalStorage, auth.token);
   yield put({
     type: SIGN_IN_SUCCESS,
     payload: {
