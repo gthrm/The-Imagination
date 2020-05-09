@@ -71,25 +71,31 @@ app.post('/user', checkToken, (req, res) => {
 });
 
 app.get('/game/:gameId', checkToken, (req, res) => {
-  const findGame = game.findGame(req.params.gameId);
-  if (findGame.error) {
-    res.status(findGame.error.code || 500);
+  const {game: findGame, error} = game.findGame(req.params.gameId);
+  if (error) {
+    res.status(error.code || 500);
+    res.send(error);
+    return;
   }
   res.send(findGame);
 });
 
 app.post('/game', checkToken, async (req, res) => {
-  const gameData = await game.createGame();
-  if (gameData.error) {
-    res.status(gameData.error.code || 500);
+  const {gameState, error} = await game.createGame();
+  if (error) {
+    res.status(error.code || 500);
+    res.send(error);
+    return;
   }
-  res.send(gameData);
+  res.send(gameState);
 });
 
 app.put('/game/:gameId', checkToken, async (req, res) => {
-  const startgame = await game.startGame(req.params.gameId, socketio);
-  if (startgame.error) {
-    res.status(startgame.error.code || 500);
+  const {game: startgame, error} = await game.startGame(req.params.gameId, socketio);
+  if (error) {
+    res.status(error.code || 500);
+    res.send(error);
+    return;
   }
   res.send(startgame);
 });
@@ -103,41 +109,71 @@ app.post('/test/:gameId', checkToken, checkToken, async (req, res) => {
 });
 
 app.get('/player/:playerName/:gameId', checkToken, (req, res) => {
-  const player = game.getPlayer(req.params.gameId, req.params.playerName);
-  if (player.error) {
-    res.status(player.error.code || 500);
+  const {player, error} = game.getPlayer(req.params.gameId, req.params.playerName);
+  if (error) {
+    res.status(error.code || 500);
+    res.send(error);
+    return;
   }
   res.send(player);
 });
 
 app.post('/player/:playerName/:gameId', checkToken, (req, res) => {
-  const message = game.playerJoins(req.params.playerName, req.params.gameId, socketio);
-  if (message.error) {
-    res.status(message.error.code || 500);
+  const {message, error} = game.playerJoins(req.params.playerName, req.params.gameId, socketio);
+  if (error) {
+    res.status(error.code || 500);
+    res.send(error);
+    return;
   }
   res.send(message);
 });
 
 app.get('/cards/:playerName/:gameId', (req, res) => {
-  const cards = game.getPlayerCards(req.params.playerName, req.params.gameId);
-  if (cards.error) {
-    res.status(cards.error.code || 500);
+  const {hand: cards, error} = game.getPlayerCards(req.params.playerName, req.params.gameId);
+  if (error) {
+    res.status(error.code || 500);
+    res.send(error);
+    return;
   }
   res.send(cards);
 });
 
 app.post('/turn/:playerName/:gameId', checkToken, (req, res) => {
-  const message = game.turn(req.params.playerName, req.params.gameId, req.body, socketio);
-  if (message.error) {
-    res.status(message.error.code || 500);
+  const {message, error} = game.turn(req.params.playerName, req.params.gameId, req.body, socketio);
+  if (error) {
+    res.status(error.code || 500);
+    res.send(error);
+    return;
   }
   res.send(message);
 });
 
 app.post('/throwcard/:playerName/:gameId', checkToken, (req, res) => {
-  const message = game.throwcard(req.params.playerName, req.params.gameId, req.body, socketio);
-  if (message.error) {
-    res.status(message.error.code || 500);
+  const {message, error} = game.throwcard(req.params.playerName, req.params.gameId, req.body, socketio);
+  if (error) {
+    res.status(error.code || 500);
+    res.send(error);
+    return;
+  }
+  res.send(message);
+});
+
+app.post('/voting/:playerName/:gameId', checkToken, (req, res) => {
+  const {message, error} = game.voting(req.params.playerName, req.params.gameId, req.body, socketio);
+  if (error) {
+    res.status(error.code || 500);
+    res.send(error);
+    return;
+  }
+  res.send(message);
+});
+
+app.post('/nextTurn/:gameId', checkToken, (req, res) => {
+  const {message, error} = game.nextTurn(req.params.gameId, socketio);
+  if (error) {
+    res.status(error.code || 500);
+    res.send(error);
+    return;
   }
   res.send(message);
 });

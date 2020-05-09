@@ -258,6 +258,8 @@ export const joinGameSaga = function* ({ payload }) {
   if (payload.playerName && payload.gameId) {
     try {
       const joinData = yield call(apiService.post, { url: `/player/${payload.playerName}/${payload.gameId}`, body: null, header: null });
+      console.log('--- joinData', joinData);
+      
       yield call(setItemToLocalStorage, 'you', {
         playerName: payload.playerName,
         gameId: payload.gameId

@@ -39,7 +39,7 @@ export default function JoinGame() {
         throwCardApi={throwCardApi}
       />
       )}
-      {!joinData?.message && (
+      {!joinData && (
         <div
           css={css`
               display: flex;

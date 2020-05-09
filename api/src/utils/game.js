@@ -120,7 +120,7 @@ export default class Game {
     await this.assignPlayerPic(gameState);
     this.games.push(gameState);
 
-    return gameState;
+    return {gameState};
   }
 
   /**
@@ -133,7 +133,7 @@ export default class Game {
     if (!game) {
       return {error: {message: 'Game does not exist', code: 404}};
     }
-    return game;
+    return {game};
   }
 
   /**
@@ -171,10 +171,10 @@ export default class Game {
 
     this.dealCards(game);
 
-    socketio.toPlayers(gameId).emit('game-started', 'game-started');
-    socketio.toPlayers(gameId).emit('turn-change', game.players[playersTurn].name);
+    socketio.toPlayers(gameId).emit(SocketEvents.gameStarted, 'game-started');
+    socketio.toPlayers(gameId).emit(SocketEvents.turnChange, game.players[playersTurn].name);
 
-    return game;
+    return {game};
   };
 
   /**
@@ -283,7 +283,7 @@ export default class Game {
       const cards = await readDir();
       game.cards = cards;
     } catch (error) {
-      console.error(error);
+      return {error};
     }
   }
 
@@ -316,7 +316,7 @@ export default class Game {
     }
 
     const hand = player.cards;
-    return hand;
+    return {hand};
   };
 
   /**
@@ -353,7 +353,7 @@ export default class Game {
     if (!player) {
       return {error: {message: `player does not exist in this game.`, code: 404}};
     }
-    return player;
+    return {player};
   }
 
   /**
@@ -416,9 +416,9 @@ export default class Game {
     game.riddle = riddle;
 
     const newPlayersState = game.players.map((player) =>
-    player.name === playerName ?
-      {...player, hasThrowCard: false} :
-      {...player, hasThrowCard: true},
+      player.name === playerName ?
+        {...player, hasThrowCard: false} :
+        {...player, hasThrowCard: true},
     );
     game.players = newPlayersState;
 
@@ -469,7 +469,7 @@ export default class Game {
     console.log('--- selectedCard', selectedCard[0]);
 
 
-    game.drawPile = [...game.drawPile, {...selectedCard[0], hidden: true, playerName, isTurn}]; // TODO
+    game.drawPile = [...game.drawPile, {...selectedCard[0], hidden: true, playerName, isTurn, votedPlayers: []}]; // TODO
     player.hasThrowCard = false;
 
 
@@ -477,33 +477,27 @@ export default class Game {
       const {playerName, error} = this.getLastPlayer(game);
       if (error) return error;
       const newPlayersState = game.players.map(
-          (player)=>player.name === playerName ?
-        {...player, hasVoting: false} :
-        {...player, hasVoting: true},
+          (player) => player.name === playerName ?
+          {...player, hasVoting: false} :
+          {...player, hasVoting: true},
       );
-      const openCards = game.drawPile.map((card)=>({...card, hidden: false}));
+      const openCards = game.drawPile.map((card) => ({...card, hidden: false}));
       console.log('--- newPlayersState', newPlayersState, '---openCards', openCards);
       game.drawPile = shuffle(openCards);
       game.players = newPlayersState;
       game.voting = true;
+      if (socketio) {
+        socketio.toPlayers(gameId).emit(SocketEvents.showMessage, 'Голосование началось');
+      }
     }
 
     if (socketio) {
       socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} добавил карту.`);
       socketio.toHost(gameId).emit(SocketEvents.gameState, game);
       socketio.toPlayers(gameId).emit(SocketEvents.playerState, 'update');
-      socketio.toPlayers(gameId).emit(SocketEvents.showMessage, 'Голосование началось');
     }
     return {message: 'throw card is done'};
   }
-
-
-  // если голосование завершилось
-  // const nextTurnPlayer = this.getNextTurnPlayer(game);
-  // if (nextTurnPlayer.error) return nextTurnPlayer;
-  // nextTurnPlayer.myTurn = true;
-  // game.discardPile = [...game.discardPile, ...game.drawPile];
-  // game.drawPile = [];
 
   /**
   * getLastPlayer
@@ -511,7 +505,7 @@ export default class Game {
   * @return {string}
   */
   getLastPlayer(game) {
-    const lastPlayerCard = game.drawPile.find((card)=>card.isTurn);
+    const lastPlayerCard = game.drawPile.find((card) => card.isTurn);
     if (!lastPlayerCard) {
       return {error: {message: 'lastPlayerCard not found', code: 404}};
     }
@@ -531,12 +525,168 @@ export default class Game {
       return error;
     }
 
-    const lastPlayerIndex = game.players.findIndex((player)=> player.name === playerName);
+    const lastPlayerIndex = game.players.findIndex((player) => player.name === playerName);
     if (lastPlayerIndex === -1) {
       return {error: {message: 'lastPlayerIndex not found', code: 404}};
     }
 
-    if (lastPlayerIndex === game.players.length - 1) return game.players[0];
-    return game.players[lastPlayerIndex];
+    if (lastPlayerIndex + 1 === game.players.length - 1) return game.players[0];
+    return game.players[lastPlayerIndex + 1];
+  }
+
+  /**
+  * voting
+  * @param {string} playerName - gameId
+  * @param {string} gameId - playerName
+  * @param {object} body - body
+  * @param {object} socketio - socketio
+  * @return {object}
+  */
+  voting(playerName, gameId, body = {}, socketio) {
+    const {game, player, error} = this.getGameAndPlayer(gameId, playerName);
+    const {voting} = body; // TODO
+    if (error) {
+      return error;
+    }
+    if (game.gameOver) {
+      return {error: {message: `game is over.`, code: 400}};
+    }
+    if (!game.started) {
+      return {error: {message: `game does not started.`, code: 400}};
+    }
+    if (!game.roundStarted) {
+      return {error: {message: `round does not started.`, code: 400}};
+    }
+    if (!player.hasVoting) {
+      return {error: {message: `you don't have voting`, code: 400}};
+    }
+    if (!voting) {
+      return {error: {message: 'field voting required.', code: 412}};
+    }
+    const votingCardindex = game.drawPile.findIndex((card) => card.fileName === voting);
+    if (votingCardindex === -1) {
+      return {error: {message: `card not found.`, code: 400}};
+    }
+    game.drawPile[votingCardindex].votedPlayers = [...game.drawPile[votingCardindex].votedPlayers, playerName];
+    player.hasVoting = false;
+
+    const allPlayersVoted = !game.players.some((player) => player.hasVoting);
+
+    console.log('drawPile', game.drawPile, 'allPlayersVoted', allPlayersVoted);
+
+    if (allPlayersVoted) {
+      const {newPlayersState, error} = this.getPoints(game);
+      console.log('--- newPlayersState', newPlayersState, 'error', error);
+
+      if (error) {
+        return error;
+      }
+      game.players = newPlayersState;
+      game.voting = false;
+      game.roundStarted = false;
+      // // если голосование завершилось
+      // const nextTurnPlayer = this.getNextTurnPlayer(game);
+      // if (nextTurnPlayer.error) return nextTurnPlayer;
+      // nextTurnPlayer.myTurn = true;
+      // game.discardPile = [...game.discardPile, ...game.drawPile];
+      // game.drawPile = [];
+
+      // for (let index = game.players.length; index > 0; index--) {
+      //   if (game.cards.length > 0) {
+      //     const newCard = this.drawCard(game.cards);
+      //     console.log('--- newCard', newCard);
+      //     game.players[index - 1].cards.push(newCard);
+      //   }
+      // }
+
+      socketio.toHost(gameId).emit(SocketEvents.showMessage, 'Голосование завершилось');
+      socketio.toHost(gameId).emit(SocketEvents.gameState, game);
+      socketio.toPlayers(gameId).emit(SocketEvents.playerState, 'update');
+      return {message: 'voting is end'};
+    }
+    socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} проголосовал`);
+    socketio.toPlayers(gameId).emit(SocketEvents.playerState, 'update');
+    return {message: 'voting is ok'};
+  }
+
+  /**
+  * nextTurn
+  * @param {string} gameId - gameId
+  * @param {object} socketio - socketio
+  * @return {object}
+  */
+  nextTurn(gameId, socketio) {
+    // если голосование завершилось
+    const {game, error} = this.findGame(gameId);
+    if (error) {
+      return error;
+    }
+    if (game.gameOver) {
+      return {error: {message: `game is over.`, code: 400}};
+    }
+    if (!game.started) {
+      return {error: {message: `game does not started.`, code: 400}};
+    }
+    if (game.roundStarted) {
+      return {error: {message: `round is started`, code: 400}};
+    }
+    if (game.voting) {
+      return {error: {message: `voting is started.`, code: 400}};
+    }
+    const nextTurnPlayer = this.getNextTurnPlayer(game);
+    if (nextTurnPlayer.error) return nextTurnPlayer;
+    nextTurnPlayer.myTurn = true;
+    game.discardPile = [...game.discardPile, ...game.drawPile];
+    game.drawPile = [];
+
+    for (let index = game.players.length; index > 0; index--) {
+      if (game.cards.length > 0) {
+        const newCard = this.drawCard(game.cards);
+        console.log('--- newCard', newCard);
+        game.players[index - 1].cards.push(newCard);
+      }
+    }
+    game.round ++;
+    game.roundStarted = true;
+    socketio.toHost(gameId).emit(SocketEvents.gameState, game);
+    socketio.toPlayers(gameId).emit(SocketEvents.playerState, 'update');
+    socketio.toPlayers(gameId).emit(SocketEvents.turnChange, nextTurnPlayer.name);
+    return {message: 'next turn started'};
+  }
+
+  /**
+  * getPoints
+  * @param {object} game - game
+  * @return {object}
+  */
+  getPoints(game) {
+    const {drawPile} = game;
+    const turnCard = drawPile.find((card) => card.isTurn);
+    console.log('turnCard', turnCard);
+
+    if (!turnCard) {
+      return {error: {message: `card not found.`, code: 404}};
+    }
+
+    if (turnCard.votedPlayers.length === game.players.length - 1) {
+      const newPlayersState = game.players.map((player) => ({...player, points: player.points - 3 > 0 ? player.points - 3 : 0}));
+      console.log('--- 1 newPlayersState', newPlayersState);
+      return {newPlayersState};
+    }
+
+    if (turnCard.votedPlayers.length === 0) {
+      const newPlayersState = game.players.map((player) => player.name === turnCard.playerName ?
+        ({...player, points: player.points - 3 > 0 ? player.points - 3 : 0}) :
+        ({...player}));
+      console.log('--- 2 newPlayersState', newPlayersState);
+      return {newPlayersState};
+    }
+
+    const newPlayersState = game.players.map((player) => ({
+      ...player,
+      points: turnCard.votedPlayers.some((p) => p === player.name) || turnCard.playerName === player.name ? player.points + 3 : 0,
+    }));
+    console.log('--- 3 newPlayersState', newPlayersState);
+    return {newPlayersState};
   }
 }

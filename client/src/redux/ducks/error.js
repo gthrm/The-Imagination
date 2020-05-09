@@ -127,8 +127,8 @@ export const errorSaga = function* ({ error, payload }) {
         yield call(removeTokenFromLocalStorage);
         break;
 
-      case error.response.status === 404 && error.response.data.error.message === 'Game does not exist':
-      case error.response.status === 404 && error.response.data.error.message === 'This game does not exist.':
+      case error.response.status === 404 && error.response.data.message === 'Game does not exist':
+      case error.response.status === 404 && error.response.data.message === 'This game does not exist.':
         yield call(getAlert, 'Игра не существует или уже завершилась', 'Создайте новую игру', refreshPage);
         yield call(clearStorageWithoutToken);
         yield put({
@@ -137,7 +137,7 @@ export const errorSaga = function* ({ error, payload }) {
         });
         break;
 
-      case error.response.status === 400 && error.response.data.error.message === 'This game has too many players, please join a different game.':
+      case error.response.status === 400 && error.response.data.message === 'This game has too many players, please join a different game.':
         yield call(getAlert, 'В игре максимальное количество человек, присоеденитесь к другой игре', 'Присоеденитесь к другой игре');
         yield put({
           type: ERROR_SUCCESS,
@@ -145,7 +145,7 @@ export const errorSaga = function* ({ error, payload }) {
         });
         break;
 
-      case error.response.status === 400 && error.response.data.error.message === 'This playerName already exist.':
+      case error.response.status === 400 && error.response.data.message === 'This playerName already exist.':
         yield call(getAlert, 'Игрок с таким имененм уже существует', 'Задайте другое имя');
         yield put({
           type: ERROR_SUCCESS,
@@ -153,7 +153,7 @@ export const errorSaga = function* ({ error, payload }) {
         });
         break;
 
-      case error.response.status === 400 && error.response.data.error.message === 'not enough cards in the card folder.':
+      case error.response.status === 400 && error.response.data.message === 'not enough cards in the card folder.':
         yield call(getAlert, 'Не достаточно карт для игры', 'Добавьте карты в папку с картами');
         yield put({
           type: ERROR_SUCCESS,
@@ -161,7 +161,7 @@ export const errorSaga = function* ({ error, payload }) {
         });
         break;
 
-      case error.response.status === 400 && error.response.data.error.message === 'This round has already started.':
+      case error.response.status === 400 && error.response.data.message === 'This round has already started.':
         yield call(getAlert, 'Этот раунд уже начат', 'Присоеденитесь к другой игре');
         yield put({
           type: ERROR_SUCCESS,
@@ -169,7 +169,7 @@ export const errorSaga = function* ({ error, payload }) {
         });
         break;
 
-      case error.response.status === 400 && error.response.data.error.message === 'A game needs at least two players.':
+      case error.response.status === 400 && error.response.data.message === 'A game needs at least two players.':
         yield call(getAlert, 'В игре не достаточно игроков', 'Необходимо минимум двое');
         yield put({
           type: ERROR_SUCCESS,
@@ -177,8 +177,8 @@ export const errorSaga = function* ({ error, payload }) {
         });
         break;
 
-      case error.response.status === 404 && error.response.data.error.message === 'player does not exist in this game.':
-      case error.response.status === 404 && error.response.data.error.message === 'game does not exist.':
+      case error.response.status === 404 && error.response.data.message === 'player does not exist in this game.':
+      case error.response.status === 404 && error.response.data.message === 'game does not exist.':
         yield call(getAlert, 'Игра или игрок с таким именем не найден', '', refreshPage);
         yield call(clearStorageWithoutToken);
         yield put({
