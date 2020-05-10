@@ -14,6 +14,7 @@ export const SocketEvents = {
   gameState: 'game-state',
   playerState: 'player-state',
   newTurn: 'new-turn',
+  gameOver: 'game-over',
 };
 
 const HOST = config.backend_url;

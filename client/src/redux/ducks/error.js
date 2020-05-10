@@ -170,7 +170,7 @@ export const errorSaga = function* ({ error, payload }) {
         break;
 
       case error.response.status === 400 && error.response.data.message === 'A game needs at least two players.':
-        yield call(getAlert, 'В игре не достаточно игроков', 'Необходимо минимум двое');
+        yield call(getAlert, 'В игре не достаточно игроков', 'Необходимо минимум трое');
         yield put({
           type: ERROR_SUCCESS,
           error
@@ -181,6 +181,15 @@ export const errorSaga = function* ({ error, payload }) {
       case error.response.status === 404 && error.response.data.message === 'game does not exist.':
         yield call(getAlert, 'Игра или игрок с таким именем не найден', '', refreshPage);
         yield call(clearStorageWithoutToken);
+        yield put({
+          type: ERROR_SUCCESS,
+          error
+        });
+        break;
+
+      case error.response.status === 404:
+      case error.response.status === 400:
+        yield call(getAlert, error?.response?.data?.message || 'Что-то пошло не так', '');
         yield put({
           type: ERROR_SUCCESS,
           error

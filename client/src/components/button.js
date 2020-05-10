@@ -18,7 +18,7 @@ export default function Button(props) {
       role="button"
       tabIndex="0"
       css={css`
-            min-width: 300px;
+            min-width: 200px;
             border-color: #382e59 #2e2640;
             border-radius: 2px;
             border-style: solid;

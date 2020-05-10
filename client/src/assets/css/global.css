@@ -11,6 +11,7 @@ body {
   --textLink: rgb(255, 87, 0);
   --textLinkHover: rgba(255, 87, 0, 0.8);
   --hr: hsla(0, 0%, 0%, 0.2);
+  --greenBorder: #00b956;
 
   min-width: 320px;
   background-color: var(--bg);

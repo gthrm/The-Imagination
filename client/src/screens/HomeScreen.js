@@ -4,7 +4,14 @@ import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import Layout from '../components/layout';
 import useActions from '../hooks/useActions';
-import { createGame, startGame, gameSelector } from '../redux/ducks/game';
+import {
+  createGame,
+  startGame,
+  gameSelector,
+  startNextRound
+} from '../redux/ducks/game';
+import { clearStorageWithoutToken } from '../utils/localStorangeManagement';
+import refreshPage from '../utils/refreshPage';
 import Button from '../components/button';
 import Players from '../components/Players';
 import Cards from '../components/Cards';
@@ -13,15 +20,28 @@ export default function HomeScreen() {
   const history = useHistory();
   const game = useSelector(gameSelector);
   const players = game?.players;
-  const [createGameApi, startGameApi] = useActions([createGame, startGame]);
+  const [createGameApi, startGameApi, startNextRoundApi] = useActions([createGame, startGame, startNextRound]);
   const createGameHandler = () => createGameApi();
   const startGameHandler = () => startGameApi();
+  const gameOver = game?.gameOver;
   const gameIsCreated = game;
   const gameIsStarted = game?.started;
   const drawPile = game?.drawPile;
   const riddle = game?.riddle;
-  const votingIsStart = game?.voting;
-  const joinTheGame = () => history.push('/joingame');
+  const votingStarted = game?.voting;
+  const roundStarted = game?.roundStarted;
+  const nextRoundIsAvailable = !votingStarted && !roundStarted;
+  const winner = game?.winner;
+  const joinTheGame = async () => {
+    history.push('/joingame');
+    clearStorageWithoutToken();
+    refreshPage();
+  };
+
+  const closeTheGame = async () => {
+    clearStorageWithoutToken();
+    refreshPage();
+  };
 
   return (
     <Layout>
@@ -35,7 +55,7 @@ export default function HomeScreen() {
             `}
       >
 
-        {!gameIsStarted && (
+        {(!gameIsStarted || gameOver) && (
           <div
             css={css`
               flex-direction: column;
@@ -44,10 +64,18 @@ export default function HomeScreen() {
               border-radius: 5px;
             `}
           >
-            <Button
-              onClick={gameIsCreated ? startGameHandler : createGameHandler}
-              title={gameIsCreated ? 'Начать игру' : 'Новая игра'}
-            />
+            {gameIsCreated && !gameIsStarted && (
+              <Button
+                onClick={startGameHandler}
+                title="Начать игру"
+              />
+            )}
+            {(!gameIsCreated || gameOver) && (
+              <Button
+                onClick={createGameHandler}
+                title="Новая игра"
+              />
+            )}
             {!gameIsCreated && (
               <Button
                 onClick={joinTheGame}
@@ -56,14 +84,29 @@ export default function HomeScreen() {
             )}
           </div>
         )}
-        {drawPile?.length > 0 && (
+        {gameIsCreated && (
+          <div
+            css={css`
+            flex-direction: column;
+            display: flex;
+            background-color: #463973;
+            border-radius: 5px;
+          `}
+          >
+            <Button
+              onClick={closeTheGame}
+              title="Сбросить игру"
+            />
+          </div>
+        )}
+        {!gameOver && drawPile?.length > 0 && (
           <div
             css={css`
               flex-direction: column;
               display: flex;
             `}
           >
-            <Cards cards={drawPile} votingIsStart={!!votingIsStart} />
+            <Cards cards={drawPile} votingStarted={!!votingStarted} nextRoundIsAvailable={nextRoundIsAvailable} />
             <p
               css={css`
                 font-size: 16px;
@@ -73,6 +116,26 @@ export default function HomeScreen() {
             >
               {!!riddle && `Загадка: ${riddle}`.toUpperCase()}
             </p>
+          </div>
+        )}
+        {!gameOver && drawPile?.length > 0 && nextRoundIsAvailable && (
+          <div
+            css={css`
+              flex-direction: column;
+              display: flex;
+              background-color: #463973;
+              border-radius: 5px;
+            `}
+          >
+            <Button
+              onClick={startNextRoundApi}
+              title="Следующий раунд"
+            />
+          </div>
+        )}
+        {!!gameOver && !!winner && (
+          <div>
+            <p>{`Победитель - ${winner.name}`}</p>
           </div>
         )}
         <div>

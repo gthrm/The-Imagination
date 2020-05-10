@@ -6,10 +6,13 @@ import { Record } from 'immutable';
 import showMessage from '../../utils/notificationUtils';
 import { name } from '../../../package.json';
 import {
-  setItemToLocalStorage
+  setItemToLocalStorage,
+  clearStorageWithoutToken
 } from '../../utils/localStorangeManagement';
 import apiService, { SocketEvents, socket } from '../../utils/API';
 import { errorSaga } from './error';
+import { getAlert } from '../../utils/erorAlert';
+import refreshPage from '../../utils/refreshPage';
 
 /**
    * Constants
@@ -52,10 +55,21 @@ export const THROW_CARD_START = `${prefix}/THROW_CARD_START`;
 export const THROW_CARD_SUCCESS = `${prefix}/THROW_CARD_SUCCESS`;
 export const THROW_CARD_ERROR = `${prefix}/THROW_CARD_ERROR`;
 
+export const VOTE_FOR_CARD_REQUEST = `${prefix}/VOTE_FOR_CARD_REQUEST`;
+export const VOTE_FOR_CARD_START = `${prefix}/VOTE_FOR_CARD_START`;
+export const VOTE_FOR_CARD_SUCCESS = `${prefix}/VOTE_FOR_CARD_SUCCESS`;
+export const VOTE_FOR_CARD_ERROR = `${prefix}/VOTE_FOR_CARD_ERROR`;
+
+export const START_NEXT_ROUND_REQUEST = `${prefix}/START_NEXT_ROUND_REQUEST`;
+export const START_NEXT_ROUND_START = `${prefix}/START_NEXT_ROUND_START`;
+export const START_NEXT_ROUND_SUCCESS = `${prefix}/START_NEXT_ROUND_SUCCESS`;
+export const START_NEXT_ROUND_ERROR = `${prefix}/START_NEXT_ROUND_ERROR`;
+
 export const GAME_UPDATED = `${prefix}/GAME_UPDATED`;
 export const GAME_RESTORED = `${prefix}/GAME_RESTORED`;
 
 export const SELECT_CARD = `${prefix}/SELECT_CARD`;
+export const SELECT_NUMBER = `${prefix}/SELECT_NUMBER`;
 
 export const REALTIME_GAME_STATUS_UPDATED = `${prefix}/REALTIME_GAME_STATUS_UPDATED`;
 export const REALTIME_TURN_CHANGED = `${prefix}/REALTIME_TURN_CHANGED`;
@@ -145,6 +159,19 @@ export default function reducer(state = new ReducerRecord(), action) {
         })
         .set('error', null);
 
+    case SELECT_NUMBER:
+      return state
+        .set('player', {
+          ...state.player,
+          cardForVoting: [
+            ...state.player?.cardForVoting?.map(
+              (card) => (card?.fileName === payload?.card?.fileName
+                ? { ...card, selected: !payload?.card?.selected }
+                : { ...card, selected: false }))
+          ]
+        })
+        .set('error', null);
+
     case CREATE_GAME_ERROR:
     case START_GAME_ERROR:
     case JOIN_GAME_ERROR:
@@ -198,6 +225,19 @@ export const selectCard = ({ card }) => ({
 
 export const throwCard = () => ({
   type: THROW_CARD_REQUEST
+});
+
+export const voteForCard = () => ({
+  type: VOTE_FOR_CARD_REQUEST
+});
+
+export const selectNumber = ({ card }) => ({
+  type: SELECT_NUMBER,
+  payload: { card }
+});
+
+export const startNextRound = () => ({
+  type: START_NEXT_ROUND_REQUEST
 });
 
 /**
@@ -259,7 +299,7 @@ export const joinGameSaga = function* ({ payload }) {
     try {
       const joinData = yield call(apiService.post, { url: `/player/${payload.playerName}/${payload.gameId}`, body: null, header: null });
       console.log('--- joinData', joinData);
-      
+
       yield call(setItemToLocalStorage, 'you', {
         playerName: payload.playerName,
         gameId: payload.gameId
@@ -375,6 +415,11 @@ export const setRiddleSaga = function* ({ payload }) {
     }
   } else {
     console.log('Нужно выбрать карту');
+    yield put({
+      type: SET_RIDDLE_ERROR,
+      payload: { saga: setRiddleSaga, sagaPayload: payload },
+      error: { response: { status: 400, data: { message: 'Нужно выбрать карту' } } }
+    });
   }
 };
 
@@ -412,6 +457,83 @@ export const throwCardSaga = function* ({ payload }) {
     }
   } else {
     console.log('Нужно выбрать карту');
+    yield put({
+      type: THROW_CARD_ERROR,
+      payload: { saga: throwCardSaga, sagaPayload: payload },
+      error: { response: { status: 400, data: { message: 'Нужно выбрать карту' } } }
+    });
+  }
+};
+
+export const voteForCardSaga = function* ({ payload }) {
+  yield put({
+    type: VOTE_FOR_CARD_START
+  });
+  const player = yield select(playerSelector);
+  const you = yield select(youSelector);
+
+  const selectedCard = player.cardForVoting.filter((card) => card.selected)[0];
+  const playerName = player.name;
+  const { gameId } = you;
+  if (selectedCard) {
+    try {
+      const gameStatusMessage = yield call(apiService.post, {
+        url: `/voting/${playerName}/${gameId}`,
+        body: {
+          voting: selectedCard.fileName
+        },
+        header: null
+      });
+      console.log('gameStatusMessage', gameStatusMessage);
+
+      yield put({
+        type: VOTE_FOR_CARD_SUCCESS,
+        payload: { gameStatusMessage }
+      });
+    } catch (error) {
+      yield put({
+        type: VOTE_FOR_CARD_ERROR,
+        payload: { saga: voteForCardSaga, sagaPayload: payload },
+        error
+      });
+    }
+  } else {
+    console.log('Нужно выбрать карту');
+    yield put({
+      type: VOTE_FOR_CARD_ERROR,
+      payload: { saga: voteForCardSaga, sagaPayload: payload },
+      error: { response: { status: 400, data: { message: 'Нужно выбрать карту' } } }
+    });
+  }
+};
+
+export const startNextRoundSaga = function* ({ payload }) {
+  yield put({
+    type: START_NEXT_ROUND_START
+  });
+
+  const game = yield select(gameSelector);
+  const { gameId } = game;
+  console.log('gameId', gameId);
+
+  try {
+    const gameStatusMessage = yield call(apiService.post, {
+      url: `/nextTurn/${gameId}`,
+      body: null,
+      header: null
+    });
+    console.log('gameStatusMessage', gameStatusMessage, gameId);
+
+    yield put({
+      type: START_NEXT_ROUND_SUCCESS,
+      payload: { gameStatusMessage }
+    });
+  } catch (error) {
+    yield put({
+      type: START_NEXT_ROUND_ERROR,
+      payload: { saga: startNextRoundSaga, sagaPayload: payload },
+      error
+    });
   }
 };
 
@@ -544,6 +666,23 @@ export const setGameStateRealtimeSyncSaga = function* () {
   }
 };
 
+const gameOverEventChannel = () => {
+  const subscribe = (emitter) => {
+    socket.on(SocketEvents.gameOver, (data) => emitter({ data }));
+    return () => socket.removeListener(SocketEvents.gameOver, emitter);
+  };
+  return eventChannel(subscribe);
+};
+
+export const gameOverRealtimeSyncSaga = function* () {
+  const chanel = yield call(gameOverEventChannel);
+  while (true) {
+    const gameOverState = yield take(chanel);
+    yield call(getAlert, `Игра закончена, победил ${gameOverState.data}`, '', refreshPage);
+    yield call(clearStorageWithoutToken);
+  }
+};
+
 export function* saga() {
   yield all([
     takeLatest(START_GAME_ERROR, errorSaga),
@@ -553,12 +692,16 @@ export function* saga() {
     takeLatest(FETCH_PLAYER_ERROR, errorSaga),
     takeLatest(SET_RIDDLE_ERROR, errorSaga),
     takeLatest(THROW_CARD_ERROR, errorSaga),
+    takeLatest(VOTE_FOR_CARD_ERROR, errorSaga),
+    takeLatest(START_NEXT_ROUND_ERROR, errorSaga),
     takeLatest(START_GAME_REQUEST, startGameSaga),
+    takeLatest(START_NEXT_ROUND_REQUEST, startNextRoundSaga),
     takeLatest(FETCH_PLAYER_REQUEST, fetchPlayerSaga),
     takeLatest(GAME_RESTORED_REQUEST, restoredGameSaga),
     takeLatest(CREATE_GAME_REQUEST, createGameSaga),
     takeLatest(SET_RIDDLE_REQUEST, setRiddleSaga),
     takeLatest(THROW_CARD_REQUEST, throwCardSaga),
+    takeLatest(VOTE_FOR_CARD_REQUEST, voteForCardSaga),
     takeLatest(JOIN_GAME_REQUEST, joinGameSaga)
   ]);
   yield fork(gameStartedRealtimeSyncSaga);
@@ -566,4 +709,5 @@ export function* saga() {
   yield fork(showMessageRealtimeSyncSaga);
   yield fork(setGameStateRealtimeSyncSaga);
   yield fork(updatePlayerStateRealtimeSyncSaga);
+  yield fork(gameOverRealtimeSyncSaga);
 }

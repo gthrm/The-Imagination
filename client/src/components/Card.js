@@ -5,6 +5,7 @@ import getPath from '../utils/pathUtils';
 export default function Card(props) {
   const {
     card,
+    showTrue,
     selectCardApi
   } = props;
   const onPress = () => selectCardApi({ card });
@@ -17,7 +18,7 @@ export default function Card(props) {
       css={css`
         width: 100px;
         height: 150px;
-        border: ${card?.selected ? 'solid var(--textLink) 3px' : 'solid var(--textLink) 0px'};
+        border: ${card?.selected || showTrue ? `solid var(${showTrue && card?.isTurn ? '--greenBorder' : '--textLink'}) 3px` : 'solid var(--textLink) 0px'};
         background-image: linear-gradient(225deg,#ffffff80,#ffffff1c);
         border-radius: 15px;
         margin: 5px;

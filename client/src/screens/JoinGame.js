@@ -6,6 +6,7 @@ import {
   Formik, Field, Form, ErrorMessage
 } from 'formik';
 import * as Yup from 'yup';
+import ReactModal from 'react-modal';
 import { useSelector } from 'react-redux';
 import Layout from '../components/layout';
 import useActions from '../hooks/useActions';
@@ -16,28 +17,33 @@ import {
   playerSelector,
   turnSelector,
   youSelector,
-  throwCard
+  throwCard,
+  voteForCard,
+  selectNumber
 } from '../redux/ducks/game';
 import PlayerGameComponent from '../components/PlayerGameComponent';
+import Voting from '../components/Voting';
 
 export default function JoinGame() {
-  const [joinGameApi, selectCardApi, throwCardApi] = useActions([joinGame, selectCard, throwCard]);
+  const [joinGameApi, selectCardApi, throwCardApi, voteForCardApi, selectNumberApi] = useActions([joinGame, selectCard, throwCard, voteForCard, selectNumber]);
   const joinData = useSelector(joinDataSelector);
   const player = useSelector(playerSelector);
   const me = useSelector(youSelector);
   const turn = useSelector(turnSelector);
   const validName = /[^a-z]/;
+  const hasVoting = !!player?.hasVoting;
+  const cardForVoting = player?.cardForVoting;
 
   return (
     <Layout>
       {!!me && (
-      <PlayerGameComponent
-        me={me}
-        turn={turn}
-        player={player}
-        selectCardApi={selectCardApi}
-        throwCardApi={throwCardApi}
-      />
+        <PlayerGameComponent
+          me={me}
+          turn={turn}
+          player={player}
+          selectCardApi={selectCardApi}
+          throwCardApi={throwCardApi}
+        />
       )}
       {!joinData && (
         <div
@@ -91,6 +97,27 @@ export default function JoinGame() {
           </Formik>
         </div>
       )}
+      <ReactModal
+        style={{
+          content:
+          {
+            background: '#635499',
+            display: 'flex',
+            flexDirection: 'column',
+            borderRadius: 10
+          }
+        }}
+        ariaHideApp={false}
+        isOpen={hasVoting}
+        contentLabel="Угадай карту"
+      >
+        <Voting
+          cardForVoting={cardForVoting}
+          hasVoting={hasVoting}
+          voteForCardApi={voteForCardApi}
+          selectNumberApi={selectNumberApi}
+        />
+      </ReactModal>
     </Layout>
   );
 }

@@ -2,11 +2,14 @@
 import React from 'react';
 import { css } from '@emotion/core';
 import Card from './Card';
+import NumberOfCard from './NumberOfCard';
+import VotedPlayers from './VotedPlayers';
 
 export default function Cards(props) {
   const {
     cards = [],
-    votingIsStart,
+    votingStarted,
+    nextRoundIsAvailable,
     selectCardApi = () => { }
   } = props;
   return (
@@ -22,37 +25,18 @@ export default function Cards(props) {
       {cards.map(
         (card, index) => (
           <div
+            key={card.fileName}
             css={css`
               position: relative;
             `}
           >
             <Card
               selectCardApi={selectCardApi}
-              key={card.fileName}
               card={card}
+              showTrue={nextRoundIsAvailable}
             />
-            {votingIsStart
-              && (
-                <p
-                  key={index + 1}
-                  css={css`
-                    font-size: 16px;
-                    text-align: center;
-                    position: absolute;
-                    right: -8px;
-                    top: -8px;
-                    width: 30px;
-                    height: 30px;
-                    border-radius: 50%;
-                    background: rgba(0,0,0,0.59);
-                    line-height: 30px;
-                    border: 1px solid;
-                    color: #bbadd9;
-                  `}
-                >
-                  {index + 1}
-                </p>
-              )}
+            {!!votingStarted && <NumberOfCard index={index + 1} />}
+            {nextRoundIsAvailable && <VotedPlayers votedPlayers={card.votedPlayers} />}
           </div>
         )
       )}

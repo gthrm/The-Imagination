@@ -1,3 +1,6 @@
+// Load env vars
+require('dotenv').config();
+
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
@@ -22,6 +25,8 @@ import Game from './utils/game';
 const port = process.env.PORT || serverPort;
 const game = new Game();
 const handlers = new HandlerGenerator();
+// const {stMonitor, stHttpLoggerMiddleware} = require('sematext-agent-express');
+// stMonitor.start();
 
 // Разкомментировать в продакшене для подключения SSL сертификата
 // const options = {
@@ -36,6 +41,8 @@ db.setUpConnection();
 app.use(bodyParser.json());
 app.use(cors({origin: '*'}));
 app.use(helmet());
+// app.use(stHttpLoggerMiddleware);
+
 
 // const server = https.createServer(options, app);
 const server = http.createServer(app);

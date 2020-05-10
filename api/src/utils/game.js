@@ -5,6 +5,7 @@ import {
   readDir,
   CARD_LENGTH,
   STARTING_HAND,
+  MIN_PLAYERS,
   SocketEvents,
   shuffle,
 } from './otherUtils';
@@ -150,7 +151,7 @@ export default class Game {
     if (game.gameOver) {
       return {error: {message: 'This game is done, you must create a new one.', code: 400}};
     }
-    if (game.players.length < 2) {
+    if (game.players.length < MIN_PLAYERS) {
       return {error: {message: 'A game needs at least two players.', code: 400}};
     }
     if (game.roundStarted) {
@@ -469,7 +470,7 @@ export default class Game {
     console.log('--- selectedCard', selectedCard[0]);
 
 
-    game.drawPile = [...game.drawPile, {...selectedCard[0], hidden: true, playerName, isTurn, votedPlayers: []}]; // TODO
+    game.drawPile = [...game.drawPile, {...selectedCard[0], hidden: true, playerName, isTurn, votedPlayers: [], id: game.drawPile.length}];
     player.hasThrowCard = false;
 
 
@@ -479,7 +480,7 @@ export default class Game {
       const newPlayersState = game.players.map(
           (player) => player.name === playerName ?
           {...player, hasVoting: false} :
-          {...player, hasVoting: true},
+          {...player, hasVoting: true, cardForVoting: game.drawPile.map(({fileName, path, id}) => ({fileName, path, id}))},
       );
       const openCards = game.drawPile.map((card) => ({...card, hidden: false}));
       console.log('--- newPlayersState', newPlayersState, '---openCards', openCards);
@@ -500,10 +501,10 @@ export default class Game {
   }
 
   /**
-  * getLastPlayer
-  * @param {object} game - game
-  * @return {string}
-  */
+* getLastPlayer
+* @param {object} game - game
+* @return {string}
+*/
   getLastPlayer(game) {
     const lastPlayerCard = game.drawPile.find((card) => card.isTurn);
     if (!lastPlayerCard) {
@@ -515,10 +516,10 @@ export default class Game {
   }
 
   /**
-  * getNextTurn
-  * @param {object} game - game
-  * @return {object}
-  */
+* getNextTurn
+* @param {object} game - game
+* @return {object}
+*/
   getNextTurnPlayer(game) {
     const {playerName, error} = this.getLastPlayer(game);
     if (error) {
@@ -526,22 +527,30 @@ export default class Game {
     }
 
     const lastPlayerIndex = game.players.findIndex((player) => player.name === playerName);
+    console.log('--- lastPlayerIndex', lastPlayerIndex);
+
     if (lastPlayerIndex === -1) {
       return {error: {message: 'lastPlayerIndex not found', code: 404}};
     }
-
-    if (lastPlayerIndex + 1 === game.players.length - 1) return game.players[0];
-    return game.players[lastPlayerIndex + 1];
+    let nextTurnPlayer;
+    if (lastPlayerIndex === game.players.length - 1) {
+      nextTurnPlayer = game.players[0];
+      console.log('--- nextTurnPlayer 1', nextTurnPlayer);
+      return {nextTurnPlayer};
+    };
+    console.log('--- nextTurnPlayer 2', nextTurnPlayer);
+    nextTurnPlayer = game.players[lastPlayerIndex + 1];
+    return {nextTurnPlayer};
   }
 
   /**
-  * voting
-  * @param {string} playerName - gameId
-  * @param {string} gameId - playerName
-  * @param {object} body - body
-  * @param {object} socketio - socketio
-  * @return {object}
-  */
+* voting
+* @param {string} playerName - gameId
+* @param {string} gameId - playerName
+* @param {object} body - body
+* @param {object} socketio - socketio
+* @return {object}
+*/
   voting(playerName, gameId, body = {}, socketio) {
     const {game, player, error} = this.getGameAndPlayer(gameId, playerName);
     const {voting} = body; // TODO
@@ -610,11 +619,11 @@ export default class Game {
   }
 
   /**
-  * nextTurn
-  * @param {string} gameId - gameId
-  * @param {object} socketio - socketio
-  * @return {object}
-  */
+* nextTurn
+* @param {string} gameId - gameId
+* @param {object} socketio - socketio
+* @return {object}
+*/
   nextTurn(gameId, socketio) {
     // если голосование завершилось
     const {game, error} = this.findGame(gameId);
@@ -633,8 +642,27 @@ export default class Game {
     if (game.voting) {
       return {error: {message: `voting is started.`, code: 400}};
     }
-    const nextTurnPlayer = this.getNextTurnPlayer(game);
-    if (nextTurnPlayer.error) return nextTurnPlayer;
+    const onPlayerCardsLength = game.players.some((player) => player.cards.length === 0);
+
+    if (game.cards.length === 0 && onPlayerCardsLength) {
+      const winer = game.players.sort((a, b) => b.points - a.points)[0];
+      console.log('--- winer', winer);
+
+      game.gameOver = true;
+      game.winner = winer;
+
+      socketio.toHost(gameId).emit(SocketEvents.showMessage, `Игра закончена, победил ${winer.name}`);
+      socketio.toPlayers(gameId).emit(SocketEvents.gameOver, winer.name);
+
+
+      return {error: {message: `game is over.`, code: 400}};
+    }
+    const {nextTurnPlayer, error: errorGetNextTurnPlayer} = this.getNextTurnPlayer(game);
+    console.log('nextTurnPlayer', nextTurnPlayer);
+
+    if (errorGetNextTurnPlayer) {
+      return errorGetNextTurnPlayer;
+    };
     nextTurnPlayer.myTurn = true;
     game.discardPile = [...game.discardPile, ...game.drawPile];
     game.drawPile = [];
@@ -646,7 +674,7 @@ export default class Game {
         game.players[index - 1].cards.push(newCard);
       }
     }
-    game.round ++;
+    game.round++;
     game.roundStarted = true;
     socketio.toHost(gameId).emit(SocketEvents.gameState, game);
     socketio.toPlayers(gameId).emit(SocketEvents.playerState, 'update');
@@ -655,10 +683,10 @@ export default class Game {
   }
 
   /**
-  * getPoints
-  * @param {object} game - game
-  * @return {object}
-  */
+* getPoints
+* @param {object} game - game
+* @return {object}
+*/
   getPoints(game) {
     const {drawPile} = game;
     const turnCard = drawPile.find((card) => card.isTurn);
@@ -669,14 +697,14 @@ export default class Game {
     }
 
     if (turnCard.votedPlayers.length === game.players.length - 1) {
-      const newPlayersState = game.players.map((player) => ({...player, points: player.points - 3 > 0 ? player.points - 3 : 0}));
+      const newPlayersState = game.players.map((player) => ({...player, points: player.points - 3 > 0 ? player.points - 3 : player.points}));
       console.log('--- 1 newPlayersState', newPlayersState);
-      return {newPlayersState};
+      // return {newPlayersState};
     }
 
     if (turnCard.votedPlayers.length === 0) {
       const newPlayersState = game.players.map((player) => player.name === turnCard.playerName ?
-        ({...player, points: player.points - 3 > 0 ? player.points - 3 : 0}) :
+        ({...player, points: player.points - 3 > 0 ? player.points - 3 : player.points}) :
         ({...player}));
       console.log('--- 2 newPlayersState', newPlayersState);
       return {newPlayersState};
@@ -684,7 +712,7 @@ export default class Game {
 
     const newPlayersState = game.players.map((player) => ({
       ...player,
-      points: turnCard.votedPlayers.some((p) => p === player.name) || turnCard.playerName === player.name ? player.points + 3 : 0,
+      points: turnCard.votedPlayers.some((p) => p === player.name) || turnCard.playerName === player.name ? player.points + 1 : player.points,
     }));
     console.log('--- 3 newPlayersState', newPlayersState);
     return {newPlayersState};

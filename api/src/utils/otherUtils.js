@@ -7,6 +7,7 @@ import {secret} from '../../etc/config.json';
 
 export const CARD_LENGTH = (playersLength) => playersLength * STARTING_HAND;
 export const STARTING_HAND = 6;
+export const MIN_PLAYERS = 3;
 
 /**
  * Возвращает случайное число от min до max
@@ -150,4 +151,5 @@ export const SocketEvents = {
   gameState: 'game-state',
   playerState: 'player-state',
   newTurn: 'new-turn',
+  gameOver: 'game-over',
 };
