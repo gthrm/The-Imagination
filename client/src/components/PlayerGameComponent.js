@@ -4,12 +4,13 @@ import { css } from '@emotion/core';
 import Cards from './Cards';
 import Riddle from './Riddle';
 import Button from './button';
+import ButtonLayout from './ButtonLayout';
 
 export default function PlayerGameComponent(props) {
   const {
     player,
     turn,
-    me,
+    joinData,
     selectCardApi,
     throwCardApi
   } = props;
@@ -23,7 +24,7 @@ export default function PlayerGameComponent(props) {
             flex: 1;
         `}
     >
-      {!!player && !!me
+      {!!player && !!joinData
         && (
           <>
             <div
@@ -41,8 +42,8 @@ export default function PlayerGameComponent(props) {
                 flex: 1;
             `}
               >
-                <h4>{`👩‍💻👨‍💻 - ${me.playerName.toUpperCase()}`}</h4>
-                <h4>{`🎮 - ${me.gameId.toUpperCase()}`}</h4>
+                <h4>{`👩‍💻👨‍💻 - ${joinData.playerName.toUpperCase()}`}</h4>
+                <h4>{`🎮 - ${joinData.gameId.toUpperCase()}`}</h4>
               </div>
               <div
                 css={css`
@@ -57,11 +58,11 @@ export default function PlayerGameComponent(props) {
             </div>
             <Cards cards={player?.cards} selectCardApi={selectCardApi} />
             {!!player.myTurn && <Riddle />}
-            {!!player.hasThrowCard && <Button title="Держи карту" onClick={throwCardApi} />}
+            {!!player.hasThrowCard && <ButtonLayout><Button title="Держи карту" onClick={throwCardApi} /></ButtonLayout>}
           </>
         )}
 
-      {!player && me
+      {!player && joinData
         && (
           <div
             css={css`
@@ -80,7 +81,7 @@ export default function PlayerGameComponent(props) {
               {' '}
               ожидание других игроков
             </h4>
-            <h4>{`🎮 - ${me.gameId.toUpperCase()}`}</h4>
+            <h4>{`🎮 - ${joinData.gameId.toUpperCase()}`}</h4>
           </div>
         )}
     </div>

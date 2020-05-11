@@ -6,6 +6,7 @@ import {
   takeLatest
 } from 'redux-saga/effects';
 import { Record } from 'immutable';
+import { push } from 'connected-react-router';
 import { name } from '../../../package.json';
 import apiService from '../../utils/API';
 import {
@@ -183,6 +184,7 @@ export const logInSaga = function* ({ payload }) {
 
       yield call(payload.next);
     }
+    yield put(push('/'));
   } catch (error) {
     yield put({
       type: LOG_IN_ERROR,
@@ -199,7 +201,7 @@ export const singInSaga = function* () {
 
   const auth = yield call(getItemFromLocalStorage, 'auth');
   const restoredGame = yield call(getItemFromLocalStorage, 'game');
-  const you = yield call(getItemFromLocalStorage, 'you');
+  const joinData = yield call(getItemFromLocalStorage, 'joinData');
 
   if (!auth) {
     yield put({
@@ -214,14 +216,15 @@ export const singInSaga = function* () {
       auth
     }
   });
+
   if (restoredGame) {
     yield put({
       type: GAME_RESTORED_REQUEST,
       payload: { game: restoredGame }
     });
   }
-  if (you) {
-    const { playerName, gameId } = you;
+  if (joinData) {
+    const { playerName, gameId } = joinData;
     yield put({
       type: FETCH_PLAYER_REQUEST,
       payload: { playerName, gameId }

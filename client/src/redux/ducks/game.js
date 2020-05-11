@@ -3,6 +3,7 @@ import {
 } from 'redux-saga/effects';
 import { eventChannel } from 'redux-saga';
 import { Record } from 'immutable';
+import { push } from 'connected-react-router';
 import showMessage from '../../utils/notificationUtils';
 import { name } from '../../../package.json';
 import {
@@ -84,14 +85,13 @@ export const FETCH_CARD_SUCCESS = `${prefix}/FETCH_CARD_SUCCESS`;
    * */
 export const ReducerRecord = Record({
   game: null,
-  you: null,
   player: null,
   yourCards: [],
   turn: null,
   gameStatusMessage: null,
   showMessage: null,
   joinData: null,
-  loading: true
+  loading: false
 });
 
 export default function reducer(state = new ReducerRecord(), action) {
@@ -117,7 +117,6 @@ export default function reducer(state = new ReducerRecord(), action) {
       return state
         .set('loading', false)
         .set('error', null)
-        .set('you', payload.you)
         .set('joinData', payload.joinData);
 
     case FETCH_PLAYER_SUCCESS:
@@ -191,7 +190,6 @@ export default function reducer(state = new ReducerRecord(), action) {
 export const gameSelector = (state) => state[moduleName].game;
 export const playerSelector = (state) => state[moduleName].player;
 export const turnSelector = (state) => state[moduleName].turn;
-export const youSelector = (state) => state[moduleName].you;
 export const gameStatusMessageSelector = (state) => state[moduleName].gameStatusMessage;
 export const joinDataSelector = (state) => state[moduleName].joinData;
 export const loadingSelector = (state) => state[moduleName].loading;
@@ -256,6 +254,7 @@ export const createGameSaga = function* ({ payload }) {
       type: CREATE_GAME_SUCCESS,
       payload: { game: newGame }
     });
+    yield put(push('/gamehost'));
   } catch (error) {
     yield put({
       type: CREATE_GAME_ERROR,
@@ -295,41 +294,25 @@ export const joinGameSaga = function* ({ payload }) {
   yield put({
     type: JOIN_GAME_START
   });
-  if (payload.playerName && payload.gameId) {
-    try {
-      const joinData = yield call(apiService.post, { url: `/player/${payload.playerName}/${payload.gameId}`, body: null, header: null });
-      console.log('--- joinData', joinData);
 
-      yield call(setItemToLocalStorage, 'you', {
-        playerName: payload.playerName,
-        gameId: payload.gameId
-      });
-      yield put({
-        type: JOIN_GAME_SUCCESS,
-        payload: {
-          joinData,
-          you: {
-            playerName: payload.playerName,
-            gameId: payload.gameId
-          }
-        }
-      });
-      socket.emit(SocketEvents.joinGamePlayer, payload.gameId);
-      // const you = yield select(youSelector);
-      // if (you) {
-      //   const { playerName, gameId } = you;
-      //   yield put({
-      //     type: FETCH_PLAYER_REQUEST,
-      //     payload: { playerName, gameId }
-      //   });
-      // }
-    } catch (error) {
-      yield put({
-        type: JOIN_GAME_ERROR,
-        payload: { saga: joinGameSaga, sagaPayload: payload },
-        error
-      });
-    }
+  try {
+    const joinData = yield call(apiService.post, { url: `/player/${payload.playerName}/${payload.gameId}`, body: null, header: null });
+    console.log('--- joinData', joinData);
+
+    yield call(setItemToLocalStorage, 'joinData', joinData);
+    yield put({
+      type: JOIN_GAME_SUCCESS,
+      payload: {
+        joinData
+      }
+    });
+    socket.emit(SocketEvents.joinGamePlayer, payload.gameId);
+  } catch (error) {
+    yield put({
+      type: JOIN_GAME_ERROR,
+      payload: { saga: joinGameSaga, sagaPayload: payload },
+      error
+    });
   }
 };
 
@@ -385,11 +368,11 @@ export const setRiddleSaga = function* ({ payload }) {
     type: SET_RIDDLE_START
   });
   const player = yield select(playerSelector);
-  const you = yield select(youSelector);
+  const joinData = yield select(joinDataSelector);
 
   const selectedCard = player.cards.filter((card) => card.selected)[0];
   const playerName = player.name;
-  const { gameId } = you;
+  const { gameId } = joinData;
   if (selectedCard && payload.riddle) {
     try {
       const gameStatusMessage = yield call(apiService.post, {
@@ -428,11 +411,11 @@ export const throwCardSaga = function* ({ payload }) {
     type: THROW_CARD_START
   });
   const player = yield select(playerSelector);
-  const you = yield select(youSelector);
+  const joinData = yield select(joinDataSelector);
 
   const selectedCard = player.cards.filter((card) => card.selected)[0];
   const playerName = player.name;
-  const { gameId } = you;
+  const { gameId } = joinData;
   if (selectedCard) {
     try {
       const gameStatusMessage = yield call(apiService.post, {
@@ -470,11 +453,11 @@ export const voteForCardSaga = function* ({ payload }) {
     type: VOTE_FOR_CARD_START
   });
   const player = yield select(playerSelector);
-  const you = yield select(youSelector);
+  const joinData = yield select(joinDataSelector);
 
   const selectedCard = player.cardForVoting.filter((card) => card.selected)[0];
   const playerName = player.name;
-  const { gameId } = you;
+  const { gameId } = joinData;
   if (selectedCard) {
     try {
       const gameStatusMessage = yield call(apiService.post, {
@@ -554,8 +537,8 @@ export const gameStartedRealtimeSyncSaga = function* () {
 
   while (true) {
     const gameStatusMessage = yield take(chanel);
-    const player = yield select(youSelector);
-    const yourCards = yield call(apiService.get, `/cards/${player.playerName}/${player.gameId}`);
+    const joinData = yield select(joinDataSelector);
+    const yourCards = yield call(apiService.get, `/cards/${joinData.playerName}/${joinData.gameId}`);
     if (yourCards.waiting) {
       showMessage({ message: 'Игра скоро начнётся 🎮', type: 'info' });
     } else {
@@ -584,9 +567,9 @@ export const turnChangeRealtimeSyncSaga = function* () {
   const chanel = yield call(turnChangeEventChannel);
   while (true) {
     const turn = yield take(chanel);
-    const you = yield select(youSelector);
-    if (you) {
-      const { playerName, gameId } = you;
+    const joinData = yield select(joinDataSelector);
+    if (joinData) {
+      const { playerName, gameId } = joinData;
       yield put({
         type: FETCH_PLAYER_REQUEST,
         payload: { playerName, gameId }
@@ -613,9 +596,9 @@ export const updatePlayerStateRealtimeSyncSaga = function* () {
   while (true) {
     const playerState = yield take(chanel);
     if (playerState) {
-      const you = yield select(youSelector);
-      if (you) {
-        const { playerName, gameId } = you;
+      const joinData = yield select(joinDataSelector);
+      if (joinData) {
+        const { playerName, gameId } = joinData;
         yield put({
           type: FETCH_PLAYER_REQUEST,
           payload: { playerName, gameId }

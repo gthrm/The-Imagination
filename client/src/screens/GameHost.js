@@ -1,27 +1,28 @@
 import React from 'react';
 import { css } from '@emotion/core';
 import { useSelector } from 'react-redux';
-import { useHistory } from 'react-router-dom';
+import {
+  Redirect,
+  useLocation
+} from 'react-router-dom';
 import Layout from '../components/layout';
 import useActions from '../hooks/useActions';
 import {
-  createGame,
   startGame,
   gameSelector,
   startNextRound
 } from '../redux/ducks/game';
-import { clearStorageWithoutToken } from '../utils/localStorangeManagement';
-import refreshPage from '../utils/refreshPage';
+
 import Button from '../components/button';
+import ButtonLayout from '../components/ButtonLayout';
 import Players from '../components/Players';
 import Cards from '../components/Cards';
 
-export default function HomeScreen() {
-  const history = useHistory();
+export default function GameHost() {
+  const location = useLocation();
   const game = useSelector(gameSelector);
   const players = game?.players;
-  const [createGameApi, startGameApi, startNextRoundApi] = useActions([createGame, startGame, startNextRound]);
-  const createGameHandler = () => createGameApi();
+  const [startGameApi, startNextRoundApi] = useActions([startGame, startNextRound]);
   const startGameHandler = () => startGameApi();
   const gameOver = game?.gameOver;
   const gameIsCreated = game;
@@ -32,17 +33,16 @@ export default function HomeScreen() {
   const roundStarted = game?.roundStarted;
   const nextRoundIsAvailable = !votingStarted && !roundStarted;
   const winner = game?.winner;
-  const joinTheGame = async () => {
-    history.push('/joingame');
-    clearStorageWithoutToken();
-    refreshPage();
-  };
-
-  const closeTheGame = async () => {
-    clearStorageWithoutToken();
-    refreshPage();
-  };
-
+  if (!gameIsCreated) {
+    return (
+      <Redirect
+        to={{
+          pathname: '/',
+          state: { from: location }
+        }}
+      />
+    );
+  }
   return (
     <Layout>
       <div
@@ -54,50 +54,13 @@ export default function HomeScreen() {
               align-items: center;
             `}
       >
-
-        {(!gameIsStarted || gameOver) && (
-          <div
-            css={css`
-              flex-direction: column;
-              display: flex;
-              background-color: #463973;
-              border-radius: 5px;
-            `}
-          >
-            {gameIsCreated && !gameIsStarted && (
-              <Button
-                onClick={startGameHandler}
-                title="Начать игру"
-              />
-            )}
-            {(!gameIsCreated || gameOver) && (
-              <Button
-                onClick={createGameHandler}
-                title="Новая игра"
-              />
-            )}
-            {!gameIsCreated && (
-              <Button
-                onClick={joinTheGame}
-                title="Присоедениться к игре"
-              />
-            )}
-          </div>
-        )}
-        {gameIsCreated && (
-          <div
-            css={css`
-            flex-direction: column;
-            display: flex;
-            background-color: #463973;
-            border-radius: 5px;
-          `}
-          >
+        {(!gameIsStarted || gameOver) && gameIsCreated && (
+          <ButtonLayout>
             <Button
-              onClick={closeTheGame}
-              title="Сбросить игру"
+              onClick={startGameHandler}
+              title="Начать игру"
             />
-          </div>
+          </ButtonLayout>
         )}
         {!gameOver && drawPile?.length > 0 && (
           <div
@@ -119,19 +82,12 @@ export default function HomeScreen() {
           </div>
         )}
         {!gameOver && drawPile?.length > 0 && nextRoundIsAvailable && (
-          <div
-            css={css`
-              flex-direction: column;
-              display: flex;
-              background-color: #463973;
-              border-radius: 5px;
-            `}
-          >
+          <ButtonLayout>
             <Button
               onClick={startNextRoundApi}
               title="Следующий раунд"
             />
-          </div>
+          </ButtonLayout>
         )}
         {!!gameOver && !!winner && (
           <div>

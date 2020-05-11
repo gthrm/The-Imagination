@@ -2,6 +2,8 @@
 import { createStore, applyMiddleware, compose } from 'redux';
 import logger from 'redux-logger';
 import createSagaMiddleware from 'redux-saga';
+import { routerMiddleware } from 'connected-react-router';
+import history from '../history';
 import rootReducer from './reducers';
 import rootSaga from './saga';
 
@@ -9,7 +11,8 @@ export default () => {
   const sagaMiddleware = createSagaMiddleware();
 
   const enhancer = applyMiddleware(sagaMiddleware);
-  const enhancers = [enhancer];
+  const routerenhancer = applyMiddleware(routerMiddleware(history));
+  const enhancers = [enhancer, routerenhancer];
 
   if (process.env.NODE_ENV === 'development') {
     console.log('====================================');

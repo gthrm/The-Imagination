@@ -246,7 +246,7 @@ export default class Game {
 
     const playerExists = game.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
     if (playerExists) {
-      return {message: 'Player joined'};
+      return {message: {status: 'Player joined', playerName, gameId}};
     }
 
     if (game.started) {
@@ -272,7 +272,7 @@ export default class Game {
 
     socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} has joined the game.`);
     socketio.toHost(gameId).emit(SocketEvents.gameState, game);
-    return {message: 'Player joined'};
+    return {message: {status: 'Player joined', playerName, gameId}};
   }
 
   /**
@@ -477,14 +477,16 @@ export default class Game {
     if (!isTurn && game.drawPile.length === game.players.length) {
       const {playerName, error} = this.getLastPlayer(game);
       if (error) return error;
+
+      const openCards = game.drawPile.map((card) => ({...card, hidden: false}));
+
+      game.drawPile = shuffle(openCards);
       const newPlayersState = game.players.map(
           (player) => player.name === playerName ?
           {...player, hasVoting: false} :
           {...player, hasVoting: true, cardForVoting: game.drawPile.map(({fileName, path, id}) => ({fileName, path, id}))},
       );
-      const openCards = game.drawPile.map((card) => ({...card, hidden: false}));
       console.log('--- newPlayersState', newPlayersState, '---openCards', openCards);
-      game.drawPile = shuffle(openCards);
       game.players = newPlayersState;
       game.voting = true;
       if (socketio) {
@@ -593,20 +595,6 @@ export default class Game {
       game.players = newPlayersState;
       game.voting = false;
       game.roundStarted = false;
-      // // если голосование завершилось
-      // const nextTurnPlayer = this.getNextTurnPlayer(game);
-      // if (nextTurnPlayer.error) return nextTurnPlayer;
-      // nextTurnPlayer.myTurn = true;
-      // game.discardPile = [...game.discardPile, ...game.drawPile];
-      // game.drawPile = [];
-
-      // for (let index = game.players.length; index > 0; index--) {
-      //   if (game.cards.length > 0) {
-      //     const newCard = this.drawCard(game.cards);
-      //     console.log('--- newCard', newCard);
-      //     game.players[index - 1].cards.push(newCard);
-      //   }
-      // }
 
       socketio.toHost(gameId).emit(SocketEvents.showMessage, 'Голосование завершилось');
       socketio.toHost(gameId).emit(SocketEvents.gameState, game);
@@ -615,7 +603,7 @@ export default class Game {
     }
     socketio.toHost(gameId).emit(SocketEvents.showMessage, `${playerName} проголосовал`);
     socketio.toPlayers(gameId).emit(SocketEvents.playerState, 'update');
-    return {message: 'voting is ok'};
+    return {message: 'voting success'};
   }
 
   /**
