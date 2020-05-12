@@ -671,11 +671,14 @@ export default class Game {
   }
 
   /**
-* getPoints
-* @param {object} game - game
-* @return {object}
-*/
+  * getPoints
+  * @param {object} game - game
+  * @return {object}
+  */
   getPoints(game) {
+    if (!game) {
+      return {error: {message: `game not found.`, code: 404}};
+    }
     const {drawPile} = game;
     const turnCard = drawPile.find((card) => card.isTurn);
     console.log('turnCard', turnCard);
@@ -687,22 +690,33 @@ export default class Game {
     if (turnCard.votedPlayers.length === game.players.length - 1) {
       const newPlayersState = game.players.map((player) => ({...player, points: player.points - 3 > 0 ? player.points - 3 : player.points}));
       console.log('--- 1 newPlayersState', newPlayersState);
-      // return {newPlayersState};
+      return {newPlayersState};
     }
 
     if (turnCard.votedPlayers.length === 0) {
       const newPlayersState = game.players.map((player) => player.name === turnCard.playerName ?
-        ({...player, points: player.points - 3 > 0 ? player.points - 3 : player.points}) :
+        ({...player, points: player.points - 2 > 0 ? player.points - 2 : player.points}) :
         ({...player}));
       console.log('--- 2 newPlayersState', newPlayersState);
       return {newPlayersState};
     }
 
-    const newPlayersState = game.players.map((player) => ({
+    const playersState = game.players.map((player) => ({
       ...player,
-      points: turnCard.votedPlayers.some((p) => p === player.name) || turnCard.playerName === player.name ? player.points + 1 : player.points,
+      points: turnCard.votedPlayers.some((p) => p === player.name) || turnCard.playerName === player.name ? player.points + 3 : player.points,
     }));
+    const newPlayersState = playersState.map((player) => turnCard.votedPlayers.find((votedPlayer) => votedPlayer === player.name) ? {...player, points: player.points + 3} : {...player});
+    // turnCard.votedPlayers.map((votedPlayer) => newPlayersState.find((player)=>player.name === votedPlayer) ? {...player, points: player.points + 3} : {...player});
     console.log('--- 3 newPlayersState', newPlayersState);
     return {newPlayersState};
+  }
+
+  /**
+  * for check test
+  * @param {string} value - game
+  * @return {object}
+  */
+  static tested(value) {
+    return {value};
   }
 }

@@ -306,6 +306,10 @@ export const joinGameSaga = function* ({ payload }) {
         joinData
       }
     });
+    yield put({
+      type: FETCH_PLAYER_REQUEST,
+      payload: { playerName: payload.playerName, gameId: payload.gameId }
+    });
     socket.emit(SocketEvents.joinGamePlayer, payload.gameId);
   } catch (error) {
     yield put({

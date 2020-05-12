@@ -19,8 +19,7 @@ import {
 import { errorSaga } from './error';
 import {
   GAME_RESTORED_REQUEST,
-  JOIN_GAME_REQUEST,
-  FETCH_PLAYER_REQUEST
+  JOIN_GAME_REQUEST
 } from './game';
 
 
@@ -225,10 +224,6 @@ export const singInSaga = function* () {
   }
   if (joinData) {
     const { playerName, gameId } = joinData;
-    yield put({
-      type: FETCH_PLAYER_REQUEST,
-      payload: { playerName, gameId }
-    });
 
     yield put({
       type: JOIN_GAME_REQUEST,
