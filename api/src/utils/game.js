@@ -578,6 +578,10 @@ export default class Game {
     if (votingCardindex === -1) {
       return {error: {message: `card not found.`, code: 400}};
     }
+    const cardFromPlayer = game.drawPile.find((card) => card.playerName.toLowerCase() === playerName.toLowerCase());
+    if (voting === cardFromPlayer.fileName) {
+      return {error: {message: `you can't vote for your card`, code: 400}};
+    }
     game.drawPile[votingCardindex].votedPlayers = [...game.drawPile[votingCardindex].votedPlayers, playerName];
     player.hasVoting = false;
 
@@ -681,7 +685,7 @@ export default class Game {
     }
     const {drawPile} = game;
     const turnCard = drawPile.find((card) => card.isTurn);
-    console.log('turnCard', turnCard);
+    const cardsVotedFor = drawPile.filter((card) => card.votedPlayers.length > 0);
 
     if (!turnCard) {
       return {error: {message: `card not found.`, code: 404}};
@@ -689,25 +693,35 @@ export default class Game {
 
     if (turnCard.votedPlayers.length === game.players.length - 1) {
       const newPlayersState = game.players.map((player) => ({...player, points: player.points - 3 > 0 ? player.points - 3 : player.points}));
-      console.log('--- 1 newPlayersState', newPlayersState);
+      console.log('--- 1 newPlayersState');
       return {newPlayersState};
     }
 
+    let playersState = game.players;
     if (turnCard.votedPlayers.length === 0) {
-      const newPlayersState = game.players.map((player) => player.name === turnCard.playerName ?
+      playersState = game.players.map((player) => player.name === turnCard.playerName ?
         ({...player, points: player.points - 2 > 0 ? player.points - 2 : player.points}) :
         ({...player}));
-      console.log('--- 2 newPlayersState', newPlayersState);
-      return {newPlayersState};
+      console.log('--- 2 newPlayersState');
+      // return {newPlayersState};
     }
 
-    const playersState = game.players.map((player) => ({
+    playersState = playersState.map((player) => ({
       ...player,
-      points: turnCard.votedPlayers.some((p) => p === player.name) || turnCard.playerName === player.name ? player.points + 3 : player.points,
+      points: turnCard.votedPlayers.find((p) => p === player.name) ? player.points + 3 : player.points,
     }));
-    const newPlayersState = playersState.map((player) => turnCard.votedPlayers.find((votedPlayer) => votedPlayer === player.name) ? {...player, points: player.points + 3} : {...player});
-    // turnCard.votedPlayers.map((votedPlayer) => newPlayersState.find((player)=>player.name === votedPlayer) ? {...player, points: player.points + 3} : {...player});
-    console.log('--- 3 newPlayersState', newPlayersState);
+
+    // cardsVotedFor.map((card) => card.votedPlayers.map((cardPlayer) => playersState.forEach((player)=>player.name === cardPlayer ? player = {...player, points: player.points + 3} : player = {...player}) ) );
+
+    const newPlayersState = playersState.map((player) => {
+      const cardVoted = cardsVotedFor.find((card)=>card.playerName === player.name);
+      if (cardVoted) {
+        return {...player, points: player.points + 3*cardVoted.votedPlayers.length};
+      }
+      return player;
+    });
+    console.log('--- 3 newPlayersState');
+
     return {newPlayersState};
   }
 

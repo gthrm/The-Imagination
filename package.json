@@ -1,0 +1,23 @@
+{
+  "name": "the-imagination",
+  "version": "1.0.0",
+  "description": "game",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd api && yarn && yarn start",
+    "dev": "cd client && yarn && yarn start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gthrm/The-Imagination.git"
+  },
+  "keywords": [
+    "game"
+  ],
+  "author": "Roman Meshcheriakov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gthrm/The-Imagination/issues"
+  },
+  "homepage": "https://github.com/gthrm/The-Imagination#readme"
+}

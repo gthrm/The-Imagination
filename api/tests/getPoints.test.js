@@ -46,15 +46,13 @@ describe('foo', function() {
     console.log('message', message);
     expect(message).to.have.deep.nested.property('newPlayersState[0].points', 3);
     expect(message).to.have.deep.nested.property('newPlayersState[1].points', 3);
-    expect(message).to.have.deep.nested.property('newPlayersState[2].points', 0);
+    expect(message).to.have.deep.nested.property('newPlayersState[2].points', 3);
   });
 
-  it('should return message with players (0 0 6)', function() {
+  it('Никто не угадал карту, ', function() {
     const message = getPoints(afterVotingNone);
-    console.log('message', message);
     expect(message).to.have.deep.nested.property('newPlayersState[0].points', 0);
     expect(message).to.have.deep.nested.property('newPlayersState[1].points', 0);
     expect(message).to.have.deep.nested.property('newPlayersState[2].points', 6);
   });
-  
 });
