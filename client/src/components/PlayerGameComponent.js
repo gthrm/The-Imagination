@@ -51,6 +51,7 @@ export default function PlayerGameComponent(props) {
                   display: flex;
                   justify-content: flex-end;
                   flex: 1;
+                  text-align: end;
               `}
               >
                 {player.myTurn ? 'Ваш ход' : (turn?.data ? `Ходит ${turn?.data}` : '')}

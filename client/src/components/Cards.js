@@ -28,6 +28,7 @@ export default function Cards(props) {
             key={card.fileName}
             css={css`
               position: relative;
+              padding: 0 10px;
             `}
           >
             <Card

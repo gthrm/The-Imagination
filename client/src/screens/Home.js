@@ -27,13 +27,21 @@ export default function Home() {
   const goToGame = () => {
     history.push('/gamehost');
   };
-  const closeTheGame = async () => {
+  const closeTheGame = () => {
     clearStorageWithoutToken();
     refreshPage();
   };
 
-  const joinTheGame = async () => {
+  const joinTheGame = () => {
     history.push('/game');
+  };
+
+  const aboutRules = () => {
+    history.push('/rules');
+  };
+
+  const aboutInfo = () => {
+    history.push('/info');
   };
 
   return (
@@ -62,23 +70,23 @@ export default function Home() {
               />
             )}
           {!gameIsCreated && (
-          <Button
-            onClick={joinTheGame}
-            title={joinData ? 'Продолжить игру' : 'Присоедениться к игре'}
-          />
+            <Button
+              onClick={joinTheGame}
+              title={joinData ? 'Продолжить игру' : 'Присоедениться к игре'}
+            />
           )}
           {(gameIsCreated || !!joinData) && (
-          <Button
-            onClick={closeTheGame}
-            title="Сбросить игру"
-          />
+            <Button
+              onClick={closeTheGame}
+              title="Сбросить игру"
+            />
           )}
           <Button
-          // onClick={createGameHandler}
+            onClick={aboutRules}
             title="Правила игры"
           />
           <Button
-          // onClick={createGameHandler}
+            onClick={aboutInfo}
             title="Инофрмация"
           />
         </ButtonLayout>

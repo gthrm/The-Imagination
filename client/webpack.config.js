@@ -2,7 +2,10 @@ const webpack = require('webpack');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const marked = require('marked');
 const config = require('./config/config.yml');
+
+const renderer = new marked.Renderer();
 
 config.backend_url = process.env.REACT_APP_API_URL || 'http://192.168.31.219:8080';
 
@@ -71,6 +74,21 @@ module.exports = {
         exclude: /node_modules/,
         use: ['file-loader?name=[name].[ext]']
       },
+      {
+        test: /\.md$/,
+        use: [
+          {
+            loader: 'html-loader'
+          },
+          {
+            loader: 'markdown-loader',
+            options: {
+              pedantic: true,
+              renderer
+            }
+          }
+        ]
+      }
     ]
   },
   plugins: [

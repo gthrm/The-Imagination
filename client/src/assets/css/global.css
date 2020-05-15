@@ -8,7 +8,7 @@ body {
   --tc: white;
   --textNormal: #bbadd9;
   --textTitle: #fff;
-  --textLink: rgb(255, 87, 0);
+  --textLink: #bbadd9;
   --textLinkHover: rgba(255, 87, 0, 0.8);
   --hr: hsla(0, 0%, 0%, 0.2);
   --greenBorder: #00b956;
@@ -38,7 +38,7 @@ body.dark {
 }
 
 #root {
-  min-height: 100vh;
+  min-height: inherit;
   display: flex;
 }
 

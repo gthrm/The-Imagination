@@ -1,9 +1,16 @@
 import React from 'react';
+import {
+  Link,
+  useLocation
+} from 'react-router-dom';
 import { css } from '@emotion/core';
 
-export default ({ children }) => (
-  <div
-    css={css`
+export default ({ children }) => {
+  const location = useLocation();
+  const showHomeButton = !(location.pathname === '/' || location.pathname === '/auth');
+  return (
+    <div
+      css={css`
         margin: 0 auto;
         max-width: 700px;
         min-width: 300px;
@@ -21,7 +28,30 @@ export default ({ children }) => (
         transition-duration: 0.2s;
         transition-property: background-color, color;
     `}
-  >
-    {children}
-  </div>
-);
+    >
+      <div
+        css={css`
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+          width: 100%;
+          margin: 10px 0;
+        `}
+      >
+        {showHomeButton && (
+        <Link
+          css={css`
+            padding: 5px;
+            border-radius: 5px;
+            background-color: var(--hr);
+            `}
+          to="/"
+        >
+          <span aria-label="Snowman" role="img">💻 На главную</span>
+        </Link>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+};

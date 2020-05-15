@@ -9,7 +9,10 @@ export default function NotFound() {
       <div
         css={css`
           font-size: 40px;
-          color: #eb4b43;
+          color: var(--textTitle);
+          display: flex;
+          align-items: center;
+          flex: 1;
       `}
       >
         {title}

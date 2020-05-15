@@ -31,9 +31,10 @@ export default function GamePlayer() {
   const player = useSelector(playerSelector);
   const turn = useSelector(turnSelector);
   const loading = useSelector(loadingSelector);
-  const validName = /[^a-z]/;
+  const validName = /^[a-z ,.'-]+$/i;
   const hasVoting = !!player?.hasVoting;
   const cardForVoting = player?.cardForVoting;
+
   if (loading) return <Preloader />;
   return (
     <Layout>
@@ -56,9 +57,9 @@ export default function GamePlayer() {
               validationSchema={Yup.object().shape({
                 playerName: Yup.string()
                   .required('Имя пользователя должно быть заполнено')
-                  .matches(validName, 'Введите валидный номер телефона')
-                  .min(3, 'Имя пользователя должно быть не менее 3-х символов')
-                  .max(10, 'Имя пользователя должно быть не больше 10 символов'),
+                  .matches(validName, 'Введите валидное имя на латинице')
+                  .min(2, 'Имя пользователя должно быть не менее 2-х символов')
+                  .max(15, 'Имя пользователя должно быть не больше 15 символов'),
                 gameId: Yup.string()
                   .min(10, 'Имя игры должно быть не менее 10 символов')
                   .required('Имя игры должно быть заполнено')
