@@ -3,7 +3,10 @@ import io from 'socket.io-client';
 import config from '../config';
 import { getTokenFromLocalStorage } from './tokenManagement';
 
-export const socket = io.connect('ws://192.168.31.219:8080');
+const dev = process.env.NODE_ENV !== 'production';
+const HOST = `${dev ? 'http' : 'https'}://${config.backend_url}`;
+const WS = `${dev ? 'ws' : 'wss'}://${config.backend_url}`;
+export const socket = io.connect(WS);
 
 export const SocketEvents = {
   joinGamePlayer: 'join-game-player',
@@ -17,11 +20,9 @@ export const SocketEvents = {
   gameOver: 'game-over',
 };
 
-const HOST = config.backend_url;
-
 const getConfig = (header) => {
   const token = getTokenFromLocalStorage();
-  console.log('--- token', token);
+  // console.log('--- token', token);
   if (!token) return {};
   const headers = { Authorization: `Bearer ${token}` };
   return header === 'auth' ? { headers } : { headers: { ...headers, 'Content-Type': 'application/json' } };

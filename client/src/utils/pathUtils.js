@@ -1,5 +1,8 @@
 /* eslint-disable no-undef */
-const url = process.env.NODE_ENV === 'development' ? 'http://192.168.31.219:8080' : window.location.origin;
+import config from '../config';
+
+const dev = process.env.NODE_ENV !== 'production';
+const url = `${dev ? 'http' : 'https'}://${config.backend_url}`;
 
 const getPath = (path) => {
   if (path) {

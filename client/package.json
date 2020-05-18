@@ -70,8 +70,9 @@
   },
   "scripts": {
     "start": "NODE_ENV=development webpack-dev-server --hot --open --host 0.0.0.0",
-    "build": "NODE_ENV=production webpack",
+    "build": "REACT_APP_API_URL=api.game.cdroma.ru NODE_ENV=production webpack",
     "prod": "GENERATE_SOURCEMAP=false yarn build",
+    "start:prod": "NODE_ENV=production webpack-dev-server --hot --open --host 0.0.0.0",
     "lint": "eslint '**/*.{js,jsx}' --quiet",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

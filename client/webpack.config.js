@@ -7,7 +7,7 @@ const config = require('./config/config.yml');
 
 const renderer = new marked.Renderer();
 
-config.backend_url = process.env.REACT_APP_API_URL || 'http://192.168.31.219:8080';
+config.backend_url = process.env.REACT_APP_API_URL || '192.168.31.219:8080';
 
 module.exports = {
   mode: process.env.NODE_ENV || 'development',
